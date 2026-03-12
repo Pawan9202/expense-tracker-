@@ -1,5 +1,6 @@
-// import React from 'react';
+import React from 'react';
 import { ChevronLeft, ChevronRight } from 'lucide-react';
+import { motion } from 'framer-motion';
 
 const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   if (totalPages <= 1) {
@@ -19,29 +20,33 @@ const Pagination = ({ currentPage, totalPages, onPageChange }) => {
   };
 
   return (
-    <div className="flex items-center justify-between mt-6">
+    <motion.div 
+      initial={{ opacity: 0, y: 10 }}
+      animate={{ opacity: 1, y: 0 }}
+      className="flex items-center justify-between mt-8 p-3 glass-panel border border-white/5 rounded-2xl"
+    >
       <button
         onClick={handlePrevious}
         disabled={currentPage === 1}
-        className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group"
       >
-        <ChevronLeft size={18} />
-        <span>Previous</span>
+        <ChevronLeft size={16} className="mr-1 text-gray-400 group-hover:text-white transition-colors" />
+        <span>Prev</span>
       </button>
 
-      <div className="text-sm text-gray-700">
-        Page <span className="font-medium">{currentPage}</span> of <span className="font-medium">{totalPages}</span>
+      <div className="text-sm text-gray-400 px-4 py-2 bg-black/20 rounded-xl border border-white/5 backdrop-blur-sm shadow-inner">
+        Page <span className="font-bold text-white mx-1">{currentPage}</span> of <span className="font-bold text-gray-300 mx-1">{totalPages}</span>
       </div>
 
       <button
         onClick={handleNext}
         disabled={currentPage === totalPages}
-        className="btn btn-outline disabled:opacity-50 disabled:cursor-not-allowed"
+        className="flex items-center px-4 py-2 text-sm font-medium text-white bg-white/5 border border-white/10 rounded-xl hover:bg-white/10 transition-colors disabled:opacity-30 disabled:cursor-not-allowed group"
       >
         <span>Next</span>
-        <ChevronRight size={18} />
+        <ChevronRight size={16} className="ml-1 text-gray-400 group-hover:text-white transition-colors" />
       </button>
-    </div>
+    </motion.div>
   );
 };
 

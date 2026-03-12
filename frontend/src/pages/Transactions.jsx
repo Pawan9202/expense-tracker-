@@ -1,10 +1,11 @@
 import React, { useState, useEffect, useCallback } from 'react';
 import { transactionService } from '../services/transactionService';
 import toast from 'react-hot-toast';
-import { Plus, Filter, X, Edit, Trash2, ArrowLeft } from 'lucide-react';
+import { Plus, Filter, X, Edit, Trash2, ArrowUpRight, ArrowDownRight, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
 import { useNavigate } from 'react-router-dom';
 import Pagination from '../components/Pagination';
 import { useForm } from 'react-hook-form';
+import { motion, AnimatePresence } from 'framer-motion';
 
 const Transactions = ({ isNew = false }) => {
   const navigate = useNavigate();
@@ -49,11 +50,11 @@ const Transactions = ({ isNew = false }) => {
         transactionService.getTransactions(query),
         transactionService.getCategories()
       ]);
-      
+
       setTransactions(transactionsData.transactions || []);
       setPagination(transactionsData.pagination || { page: 1, totalPages: 1 });
       setCategories(categoriesData || []);
-      
+
     } catch (error) {
       toast.error("Failed to load data.");
       console.error("Load data error:", error);
@@ -74,7 +75,7 @@ const Transactions = ({ isNew = false }) => {
         ...data,
         amount: parseFloat(data.amount),
       };
-      
+
       if (editingTransaction) {
         await transactionService.updateTransaction(editingTransaction.id, transactionData);
         toast.success('Transaction updated successfully');
@@ -82,10 +83,10 @@ const Transactions = ({ isNew = false }) => {
         await transactionService.createTransaction(transactionData);
         toast.success('Transaction added successfully');
       }
-      
+
       closeFormModal();
       loadData(pagination.page);
-      
+
     } catch (error) {
       console.error('Error saving transaction:', error);
       toast.error(error.response?.data?.message || 'Failed to save transaction');
@@ -103,7 +104,7 @@ const Transactions = ({ isNew = false }) => {
     });
     setShowFormModal(true);
   };
-  
+
   // Open the modal for adding
   const handleAdd = () => {
     setEditingTransaction(null);
@@ -126,7 +127,7 @@ const Transactions = ({ isNew = false }) => {
       navigate('/transactions');
     }
   };
-  
+
   // Handle deletion with confirmation
   const handleDelete = async (id) => {
     try {
@@ -138,7 +139,7 @@ const Transactions = ({ isNew = false }) => {
       toast.error('Failed to delete transaction.');
     }
   };
-  
+
   const handlePageChange = (newPage) => {
     if (newPage !== pagination.page) {
       setPagination(prev => ({ ...prev, page: newPage }));
@@ -154,180 +155,305 @@ const Transactions = ({ isNew = false }) => {
 
   const filteredCategories = categories.filter(c => c.type === transactionType);
 
+  const tableVariants = {
+    hidden: { opacity: 0 },
+    show: {
+      opacity: 1,
+      transition: { staggerChildren: 0.05 }
+    }
+  };
+
+  const rowVariants = {
+    hidden: { opacity: 0, y: 10 },
+    show: { opacity: 1, y: 0 }
+  };
+
   return (
     <>
-      <div className="space-y-6">
-        <div className="flex flex-wrap justify-between items-center gap-4">
+      <motion.div 
+        initial={{ opacity: 0, y: 20 }}
+        animate={{ opacity: 1, y: 0 }}
+        className="space-y-6 pb-12 mt-10 md:mt-0"
+      >
+        <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
           <div>
-            <h1 className="text-2xl font-bold text-gray-900">Transactions</h1>
-            <p className="text-gray-600">View and manage all your transactions.</p>
+            <h1 className="text-3xl font-bold text-white tracking-tight">Transactions</h1>
+            <p className="text-gray-400 mt-1">View and manage all your transactions.</p>
           </div>
-          <div className="flex items-center space-x-3">
-            <button className="btn btn-outline">
-              <Filter size={18} />
+          <div className="flex items-center space-x-3 w-full md:w-auto">
+            <button className="btn btn-secondary flex-1 md:flex-none">
+              <Filter size={18} className="mr-2" />
               <span>Filter</span>
             </button>
-            <button onClick={handleAdd} className="btn btn-primary">
-              <Plus size={18} />
-              <span>Add Transaction</span>
+            <button onClick={handleAdd} className="btn btn-primary flex-1 md:flex-none">
+              <Plus size={18} className="mr-2" />
+              <span>Add Expense</span>
             </button>
           </div>
         </div>
 
-        <div className="card">
+        <div className="glass-panel overflow-hidden">
           <div className="overflow-x-auto">
-            <table className="w-full text-sm text-left text-gray-500">
-              <thead className="text-xs text-gray-700 uppercase bg-gray-50">
+            <table className="table">
+              <thead className="bg-white/5 backdrop-blur-md">
                 <tr>
-                  <th scope="col" className="px-6 py-3">Description</th>
-                  <th scope="col" className="px-6 py-3">Category</th>
-                  <th scope="col" className="px-6 py-3">Date</th>
-                  <th scope="col" className="px-6 py-3 text-right">Amount</th>
-                  <th scope="col" className="px-6 py-3 text-center">Actions</th>
+                  <th scope="col" className="px-6 py-4">Transaction</th>
+                  <th scope="col" className="px-6 py-4">Category</th>
+                  <th scope="col" className="px-6 py-4">Date</th>
+                  <th scope="col" className="px-6 py-4 text-right">Amount</th>
+                  <th scope="col" className="px-6 py-4 text-center">Actions</th>
                 </tr>
               </thead>
-              <tbody>
+              <motion.tbody 
+                variants={tableVariants}
+                initial="hidden"
+                animate={!loading ? "show" : "hidden"}
+              >
                 {loading ? (
                   <tr>
-                    <td colSpan="5" className="text-center py-12">
-                      <div className="animate-spin rounded-full h-8 w-8 border-b-2 border-blue-600 mx-auto"></div>
+                    <td colSpan="5" className="text-center py-16">
+                      <div className="spinner mx-auto"></div>
                     </td>
                   </tr>
                 ) : transactions.length > 0 ? (
                   transactions.map((tx) => (
-                    <tr key={tx.id} className="bg-white border-b hover:bg-gray-50">
-                      <td className="px-6 py-4 font-medium text-gray-900 whitespace-nowrap">{tx.description}</td>
-                      <td className="px-6 py-4">{tx.category}</td>
-                      <td className="px-6 py-4">{new Date(tx.date).toLocaleDateString()}</td>
-                      <td className={`px-6 py-4 text-right font-medium ${tx.type === 'income' ? 'text-green-600' : 'text-red-600'}`}>
+                    <motion.tr 
+                      variants={rowVariants}
+                      key={tx.id} 
+                      className="group border-b border-white/5 hover:bg-white/5 transition-colors"
+                    >
+                      <td className="px-6 py-4 whitespace-nowrap">
+                        <div className="flex items-center space-x-3">
+                          <div className={`p-2.5 rounded-xl ${tx.type === 'income' ? 'bg-emerald-500/10 text-emerald-400' : 'bg-rose-500/10 text-rose-400'}`}>
+                            {tx.type === 'income' ? <ArrowUpRight size={18} /> : <ArrowDownRight size={18} />}
+                          </div>
+                          <span className="font-semibold text-gray-200">{tx.description}</span>
+                        </div>
+                      </td>
+                      <td className="px-6 py-4">
+                        <span className="inline-flex items-center px-2.5 py-1 rounded-full text-xs font-medium bg-white/10 text-gray-300 border border-white/10">
+                          {tx.category}
+                        </span>
+                      </td>
+                      <td className="px-6 py-4 text-gray-400">
+                        {new Date(tx.date).toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}
+                      </td>
+                      <td className={`px-6 py-4 text-right font-bold ${tx.type === 'income' ? 'text-emerald-400' : 'text-rose-400'}`}>
                         {tx.type === 'income' ? '+' : '-'}{formatCurrency(tx.amount)}
                       </td>
                       <td className="px-6 py-4 text-center">
-                        <div className="flex justify-center space-x-2">
-                          <button onClick={() => handleEdit(tx)} className="p-1 text-gray-500 hover:text-blue-600">
+                        <div className="flex justify-center space-x-2 opacity-100 md:opacity-0 group-hover:opacity-100 transition-opacity">
+                          <button onClick={() => handleEdit(tx)} className="p-2 text-gray-400 hover:text-indigo-400 bg-white/5 hover:bg-white/10 rounded-lg transition-colors">
                             <Edit size={16} />
                           </button>
-                          <button onClick={() => setTransactionToDelete(tx)} className="p-1 text-gray-500 hover:text-red-600">
+                          <button onClick={() => setTransactionToDelete(tx)} className="p-2 text-gray-400 hover:text-rose-400 bg-white/5 hover:bg-rose-500/10 rounded-lg transition-colors">
                             <Trash2 size={16} />
                           </button>
                         </div>
                       </td>
-                    </tr>
+                    </motion.tr>
                   ))
                 ) : (
                   <tr>
-                    <td colSpan="5" className="text-center py-12 text-gray-500">
+                    <td colSpan="5" className="text-center py-16 text-gray-400">
                       <p>No transactions found.</p>
                     </td>
                   </tr>
                 )}
-              </tbody>
+              </motion.tbody>
             </table>
           </div>
-          
+
           {!loading && pagination.total > 0 && (
-            <Pagination
-              currentPage={pagination.page}
-              totalPages={pagination.totalPages}
-              onPageChange={handlePageChange}
-            />
+            <div className="p-4 border-t border-white/10 bg-black/20">
+              <Pagination
+                currentPage={pagination.page}
+                totalPages={pagination.totalPages}
+                onPageChange={handlePageChange}
+              />
+            </div>
           )}
         </div>
-      </div>
+      </motion.div>
+
+      {/* Floating Add Button for Mobile */}
+      <motion.button
+        initial={{ scale: 0 }}
+        animate={{ scale: 1 }}
+        whileHover={{ scale: 1.05 }}
+        whileTap={{ scale: 0.95 }}
+        onClick={handleAdd}
+        className="md:hidden fixed bottom-6 right-6 p-4 rounded-full bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white shadow-lg shadow-indigo-500/40 z-40"
+      >
+        <Plus size={24} />
+      </motion.button>
 
       {/* Add/Edit Transaction Modal */}
-      {showFormModal && (
-        <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4 transition-opacity duration-300">
-          <div className="bg-white rounded-lg shadow-xl w-full max-w-2xl transform transition-all duration-300">
-            <div className="p-6">
-              <div className="flex justify-between items-center mb-4">
-                <h2 className="text-xl font-bold">{editingTransaction ? 'Edit Transaction' : 'Add New Transaction'}</h2>
-                <button onClick={closeFormModal} className="p-1 rounded-full hover:bg-gray-200">
+      <AnimatePresence>
+        {showFormModal && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-[#020617]/80 backdrop-blur-md flex justify-center items-center z-50 p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              transition={{ type: "spring", stiffness: 300, damping: 25 }}
+              className="glass-panel w-full max-w-lg p-0 overflow-hidden relative"
+            >
+              {/* Decorative gradient glow */}
+              <div className="absolute top-0 right-0 w-64 h-64 bg-indigo-500/20 rounded-full blur-3xl -z-10 transform translate-x-1/2 -translate-y-1/2"></div>
+              
+              <div className="p-6 border-b border-white/10 flex justify-between items-center bg-black/20">
+                <h2 className="text-xl font-bold text-white flex items-center">
+                  <div className="p-2 bg-indigo-500/20 text-indigo-400 rounded-lg mr-3">
+                    <DollarSign size={20} />
+                  </div>
+                  {editingTransaction ? 'Edit Transaction' : 'New Transaction'}
+                </h2>
+                <button onClick={closeFormModal} className="p-2 text-gray-400 hover:text-white bg-white/5 hover:bg-white/10 rounded-full transition-colors">
                   <X size={20} />
                 </button>
               </div>
-              <form onSubmit={handleSubmit(onSubmit)} className="space-y-4">
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
-                  <div>
-                    <label className="form-label">Type</label>
-                    <div className="flex space-x-4 p-1 bg-gray-100 rounded-lg">
-                      <label className={`flex-1 text-center py-2 rounded-md cursor-pointer ${transactionType === 'expense' ? 'bg-white shadow' : ''}`}>
+              
+              <div className="p-6">
+                <form onSubmit={handleSubmit(onSubmit)} className="space-y-5">
+                  <div className="space-y-3">
+                    <label className="text-sm font-medium text-gray-300">Transaction Type</label>
+                    <div className="flex p-1 bg-black/40 rounded-xl border border-white/5 relative">
+                      {/* Active Background Indicator is a simple absolute div handled via active class for now, or just normal Tailwind */}
+                      <label className={`flex-1 relative flex items-center justify-center p-3 rounded-lg cursor-pointer transition-all ${transactionType === 'expense' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>
                         <input type="radio" value="expense" {...register('type')} className="sr-only" />
-                        Expense
+                        <ArrowDownRight size={18} className={`mr-2 ${transactionType === 'expense' ? 'text-rose-400' : ''}`} />
+                        <span className="font-semibold">Expense</span>
                       </label>
-                      <label className={`flex-1 text-center py-2 rounded-md cursor-pointer ${transactionType === 'income' ? 'bg-white shadow' : ''}`}>
+                      <label className={`flex-1 relative flex items-center justify-center p-3 rounded-lg cursor-pointer transition-all ${transactionType === 'income' ? 'bg-white/10 text-white shadow-sm' : 'text-gray-400 hover:text-gray-200'}`}>
                         <input type="radio" value="income" {...register('type')} className="sr-only" />
-                        Income
+                        <ArrowUpRight size={18} className={`mr-2 ${transactionType === 'income' ? 'text-emerald-400' : ''}`} />
+                        <span className="font-semibold">Income</span>
                       </label>
                     </div>
                   </div>
+                  
                   <div>
-                    <label htmlFor="amount" className="form-label">Amount</label>
-                    <input
-                      id="amount" type="number" step="0.01" placeholder="0.00"
-                      {...register('amount', { required: 'Amount is required', valueAsNumber: true, min: { value: 0.01, message: 'Amount must be positive' } })}
-                      className={`form-input ${errors.amount ? 'error' : ''}`}
-                    />
-                    {errors.amount && <p className="form-error">{errors.amount.message}</p>}
+                    <label htmlFor="amount" className="text-sm font-medium text-gray-300 mb-1.5 block">Amount</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-4 flex items-center pointer-events-none">
+                        <span className="text-gray-500 font-medium">₹</span>
+                      </div>
+                      <input
+                        id="amount" type="number" step="0.01" placeholder="0.00"
+                        {...register('amount', { required: 'Amount is required', valueAsNumber: true, min: { value: 0.01, message: 'Amount must be positive' } })}
+                        className="w-full pl-8 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent transition-all"
+                      />
+                    </div>
+                    {errors.amount && <p className="text-rose-400 text-xs mt-1">{errors.amount.message}</p>}
                   </div>
-                </div>
-                <div>
-                  <label htmlFor="description" className="form-label">Description</label>
-                  <input
-                    id="description" type="text" placeholder="e.g., Lunch with colleagues"
-                    {...register('description', { required: 'Description is required' })}
-                    className={`form-input ${errors.description ? 'error' : ''}`}
-                  />
-                  {errors.description && <p className="form-error">{errors.description.message}</p>}
-                </div>
-                <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+                  
                   <div>
-                    <label htmlFor="category" className="form-label">Category</label>
-                    <select id="category" {...register('category', { required: 'Category is required' })} className={`form-select ${errors.category ? 'error' : ''}`}>
-                      <option value="">Select a category...</option>
-                      {filteredCategories.map(cat => (
-                        <option key={cat.id} value={cat.name}>{cat.name}</option>
-                      ))}
-                    </select>
-                    {errors.category && <p className="form-error">{errors.category.message}</p>}
+                    <label htmlFor="description" className="text-sm font-medium text-gray-300 mb-1.5 block">Description</label>
+                    <div className="relative">
+                      <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                        <FileText size={18} className="text-gray-500" />
+                      </div>
+                      <input
+                        id="description" type="text" placeholder="e.g., Grocery shopping"
+                        {...register('description', { required: 'Description is required' })}
+                        className="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent transition-all"
+                      />
+                    </div>
+                    {errors.description && <p className="text-rose-400 text-xs mt-1">{errors.description.message}</p>}
                   </div>
-                  <div>
-                    <label htmlFor="date" className="form-label">Date</label>
-                    <input
-                      id="date" type="date"
-                      {...register('date', { required: 'Date is required' })}
-                      className={`form-input ${errors.date ? 'error' : ''}`}
-                    />
-                    {errors.date && <p className="form-error">{errors.date.message}</p>}
+                  
+                  <div className="grid grid-cols-1 md:grid-cols-2 gap-5">
+                    <div>
+                      <label htmlFor="category" className="text-sm font-medium text-gray-300 mb-1.5 block">Category</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                          <Tag size={18} className="text-gray-500" />
+                        </div>
+                        <select 
+                          id="category" 
+                          {...register('category', { required: 'Category is required' })} 
+                          className="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent transition-all appearance-none"
+                        >
+                          <option value="" className="bg-gray-900">Select...</option>
+                          {filteredCategories.map(cat => (
+                            <option key={cat.id} value={cat.name} className="bg-gray-900">{cat.name}</option>
+                          ))}
+                        </select>
+                      </div>
+                      {errors.category && <p className="text-rose-400 text-xs mt-1">{errors.category.message}</p>}
+                    </div>
+                    <div>
+                      <label htmlFor="date" className="text-sm font-medium text-gray-300 mb-1.5 block">Date</label>
+                      <div className="relative">
+                        <div className="absolute inset-y-0 left-0 pl-3.5 flex items-center pointer-events-none">
+                          <Calendar size={18} className="text-gray-500" />
+                        </div>
+                        <input
+                          id="date" type="date"
+                          {...register('date', { required: 'Date is required' })}
+                          className="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent transition-all appearance-none [&::-webkit-calendar-picker-indicator]:invert-[0.7]"
+                        />
+                      </div>
+                      {errors.date && <p className="text-rose-400 text-xs mt-1">{errors.date.message}</p>}
+                    </div>
                   </div>
-                </div>
-                <div className="flex justify-end space-x-3 pt-4">
-                  <button type="button" onClick={closeFormModal} className="btn btn-outline" disabled={submitting}>Cancel</button>
-                  <button type="submit" className="btn btn-primary" disabled={submitting}>
-                    {submitting ? 'Saving...' : 'Save Transaction'}
-                  </button>
-                </div>
-              </form>
-            </div>
-          </div>
-        </div>
-      )}
-      
+                  
+                  <div className="flex justify-end space-x-3 pt-6 border-t border-white/10 mt-6">
+                    <button type="button" onClick={closeFormModal} className="btn btn-secondary px-6" disabled={submitting}>Cancel</button>
+                    <button type="submit" className="btn btn-primary px-8" disabled={submitting}>
+                      {submitting ? (
+                        <div className="flex items-center">
+                          <div className="spinner h-4 w-4 border-white border-t-transparent mr-2"></div>
+                          Saving...
+                        </div>
+                      ) : 'Save'}
+                    </button>
+                  </div>
+                </form>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
+
       {/* Delete Confirmation Modal */}
-      {transactionToDelete && (
-         <div className="fixed inset-0 bg-black bg-opacity-50 flex justify-center items-center z-50 p-4">
-            <div className="bg-white rounded-lg shadow-xl p-6 w-full max-w-sm">
-                <h3 className="text-lg font-bold">Confirm Deletion</h3>
-                <p className="text-sm text-gray-600 mt-2">
-                    Are you sure you want to delete this transaction? This action cannot be undone.
-                </p>
-                <div className="mt-6 flex justify-end space-x-3">
-                    <button onClick={() => setTransactionToDelete(null)} className="btn btn-outline">Cancel</button>
-                    <button onClick={() => handleDelete(transactionToDelete.id)} className="btn btn-danger">Delete</button>
-                </div>
-            </div>
-         </div>
-      )}
+      <AnimatePresence>
+        {transactionToDelete && (
+          <motion.div 
+            initial={{ opacity: 0 }}
+            animate={{ opacity: 1 }}
+            exit={{ opacity: 0 }}
+            className="fixed inset-0 bg-[#020617]/80 backdrop-blur-md flex justify-center items-center z-50 p-4"
+          >
+            <motion.div 
+              initial={{ scale: 0.9, y: 20 }}
+              animate={{ scale: 1, y: 0 }}
+              exit={{ scale: 0.9, y: 20 }}
+              className="glass-panel w-full max-w-sm p-6 relative overflow-hidden"
+            >
+              <div className="absolute top-0 right-0 w-32 h-32 bg-rose-500/20 rounded-full blur-2xl -z-10 transform translate-x-1/2 -translate-y-1/2"></div>
+              
+              <div className="w-12 h-12 rounded-full bg-rose-500/20 text-rose-400 flex items-center justify-center mb-4 border border-rose-500/20">
+                <Trash2 size={24} />
+              </div>
+              <h3 className="text-xl font-bold text-white mb-2">Delete Transaction?</h3>
+              <p className="text-sm text-gray-400">
+                Are you sure you want to delete this transaction (<span className="text-gray-300 font-medium">{transactionToDelete.description}</span>)? This action cannot be undone.
+              </p>
+              <div className="mt-6 flex justify-end space-x-3">
+                <button onClick={() => setTransactionToDelete(null)} className="btn btn-secondary flex-1">Keep It</button>
+                <button onClick={() => handleDelete(transactionToDelete.id)} className="btn btn-danger flex-1">Delete</button>
+              </div>
+            </motion.div>
+          </motion.div>
+        )}
+      </AnimatePresence>
     </>
   );
 };
