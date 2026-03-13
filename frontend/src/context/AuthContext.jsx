@@ -42,8 +42,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', data.token);
       return { success: true, user: data.user };
     } catch (error) {
-      // Propagate the actual error message from the backend
-      const errorMessage = error.response?.data?.message || 'Login failed';
+      const details = error.response?.data?.details;
+      const msgs = details ? details.map(d => d.message).join(', ') : null;
+      const errorMessage = msgs || error.response?.data?.message || error.response?.data?.error || 'Login failed';
       return { success: false, error: errorMessage };
     }
   };
@@ -55,7 +56,9 @@ export const AuthProvider = ({ children }) => {
       localStorage.setItem('token', data.token);
       return { success: true, user: data.user };
     } catch (error) {
-      const errorMessage = error.response?.data?.message || 'Registration failed';
+      const details = error.response?.data?.details;
+      const msgs = details ? details.map(d => d.message).join(', ') : null;
+      const errorMessage = msgs || error.response?.data?.message || error.response?.data?.error || 'Registration failed';
       return { success: false, error: errorMessage };
     }
   };

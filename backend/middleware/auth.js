@@ -12,7 +12,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    const decoded = jwt.verify(token, process.env.JWT_SECRET);
+    const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
     const user = await User.findById(decoded.userId);
 
     if (!user) {
@@ -53,7 +53,7 @@ const optionalAuth = async (req, res, next) => {
     const token = authHeader && authHeader.split(' ')[1];
 
     if (token) {
-      const decoded = jwt.verify(token, process.env.JWT_SECRET);
+      const decoded = jwt.verify(token, process.env.JWT_SECRET || 'fallback_secret');
       const user = await User.findById(decoded.userId);
 
       if (user) {
@@ -73,7 +73,7 @@ const generateToken = (user) => {
       userId: user._id,
       username: user.username
     },
-    process.env.JWT_SECRET,
+    process.env.JWT_SECRET || 'fallback_secret',
     { expiresIn: '7d' }
   );
 };
