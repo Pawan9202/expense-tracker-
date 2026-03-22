@@ -149,13 +149,9 @@ const Register = () => {
                       value: 6,
                       message: 'Password must be at least 6 characters',
                     },
-                    pattern: {
-                      value: /^(?=.*[a-z])(?=.*[A-Z])(?=.*\d)/,
-                      message: 'Password must contain at least one uppercase letter, one lowercase letter, and one number',
-                    },
                   })}
                   className={`form-input bg-black/20 border-white/10 text-white placeholder-gray-500 focus:border-indigo-500/50 focus:ring-indigo-500/20 pr-10 ${errors.password ? 'border-rose-500/50 focus:border-rose-500/50 focus:ring-rose-500/20' : ''}`}
-                  placeholder="Create a strong password"
+                  placeholder="Create a password"
                 />
                 <button
                   type="button"

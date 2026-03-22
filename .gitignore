@@ -1,0 +1,31 @@
+# Dependencies
+node_modules/
+*.node
+
+# Environment variables
+.env
+.env.local
+.env.*.local
+
+# Uploads (receipts, files)
+backend/uploads/*
+!backend/uploads/.gitkeep
+
+# Build outputs
+frontend/dist/
+frontend/build/
+*.log
+
+# IDE
+.vscode/
+.idea/
+*.swp
+*.swo
+
+# OS files
+.DS_Store
+Thumbs.db
+
+# Temporary files
+nul
+*.tmp

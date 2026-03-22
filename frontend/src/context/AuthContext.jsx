@@ -1,6 +1,6 @@
-import { createContext, useContext, useState, useEffect } from 'react';
+import { createContext, useContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService.js';
-import api from '../services/api.js'; // Import api to set token on it
+import api from '../services/api.js';
 
 const AuthContext = createContext();
 
@@ -12,34 +12,58 @@ export const useAuth = () => {
   return context;
 };
 
+const CACHED_USER_KEY = 'cached_user';
+
 export const AuthProvider = ({ children }) => {
-  const [user, setUser] = useState(null);
+  const [user, setUser] = useState(() => {
+    try {
+      const cached = localStorage.getItem(CACHED_USER_KEY);
+      return cached ? JSON.parse(cached) : null;
+    } catch {
+      return null;
+    }
+  });
   const [loading, setLoading] = useState(true);
+  const [isOnlineCheck, setIsOnlineCheck] = useState(false);
+
+  const validateToken = useCallback(async () => {
+    const token = localStorage.getItem('token');
+    if (!token) {
+      setLoading(false);
+      return;
+    }
+
+    try {
+      const userData = await authService.getProfile();
+      setUser(userData);
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(userData));
+    } catch (error) {
+      localStorage.removeItem('token');
+      localStorage.removeItem(CACHED_USER_KEY);
+      setUser(null);
+    } finally {
+      setLoading(false);
+    }
+  }, []);
 
   useEffect(() => {
-    const initAuth = async () => {
-      const token = localStorage.getItem('token');
-      if (token) {
-        try {
-          // The API interceptor already sets the header, but good practice.
-          const userData = await authService.getProfile();
-          setUser(userData);
-        } catch (error) {
-          // This catch block is fine, token is likely invalid/expired.
-          localStorage.removeItem('token');
-        }
-      }
+    if (user) {
       setLoading(false);
-    };
-
-    initAuth();
-  }, []);
+      if (!isOnlineCheck) {
+        setIsOnlineCheck(true);
+        validateToken();
+      }
+    } else {
+      validateToken();
+    }
+  }, [user, validateToken, isOnlineCheck]);
 
   const login = async (username, password) => {
     try {
       const data = await authService.login(username, password);
       setUser(data.user);
       localStorage.setItem('token', data.token);
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(data.user));
       return { success: true, user: data.user };
     } catch (error) {
       const details = error.response?.data?.details;
@@ -54,6 +78,7 @@ export const AuthProvider = ({ children }) => {
       const data = await authService.register(username, email, password);
       setUser(data.user);
       localStorage.setItem('token', data.token);
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(data.user));
       return { success: true, user: data.user };
     } catch (error) {
       const details = error.response?.data?.details;
@@ -66,15 +91,15 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
-    // It's also good practice to clear the authorization header from the api instance
+    localStorage.removeItem(CACHED_USER_KEY);
     delete api.defaults.headers.common['Authorization'];
-    // Redirect logic should be handled in the component calling logout
   };
 
   const updateProfile = async (updates) => {
     try {
       const updatedUser = await authService.updateProfile(updates);
       setUser(updatedUser);
+      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(updatedUser));
       return { success: true, user: updatedUser };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Profile update failed';

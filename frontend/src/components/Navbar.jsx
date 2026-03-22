@@ -12,10 +12,14 @@ import {
   Menu,
   X,
   ChevronLeft,
-  ChevronRight
+  ChevronRight,
+  Target,
+  PiggyBank,
+  Repeat,
+  Plus
 } from 'lucide-react';
 
-const Navbar = () => {
+const Navbar = ({ onQuickAdd }) => {
   const { user, logout } = useAuth();
   const location = useLocation();
   const navigate = useNavigate();
@@ -31,6 +35,9 @@ const Navbar = () => {
     { path: '/', label: 'Overview', icon: Home },
     { path: '/transactions', label: 'Transactions', icon: CreditCard },
     { path: '/analytics', label: 'Analytics', icon: BarChart3 },
+    { path: '/budgets', label: 'Budgets', icon: PiggyBank },
+    { path: '/goals', label: 'Goals', icon: Target },
+    { path: '/recurring', label: 'Recurring', icon: Repeat },
     { path: '/upload', label: 'Upload Data', icon: Upload },
   ];
 
@@ -184,6 +191,17 @@ const Navbar = () => {
             );
           })}
         </nav>
+
+        <div className="px-4 py-2">
+          <button
+            onClick={onQuickAdd}
+            className={`w-full flex items-center justify-center py-3 rounded-xl bg-gradient-to-r from-[#6366F1] to-[#8B5CF6] text-white font-semibold shadow-lg shadow-indigo-500/30 hover:shadow-indigo-500/50 transition-all hover:scale-[1.02] active:scale-[0.98] ${isCollapsed ? 'px-2' : 'px-4'}`}
+            title="Quick Add Transaction"
+          >
+            <Plus size={20} className={isCollapsed ? '' : 'mr-2'} />
+            {!isCollapsed && <span>Quick Add</span>}
+          </button>
+        </div>
 
         <div className="p-4 border-t border-white/10">
           <div className={`flex items-center ${isCollapsed ? 'justify-center' : 'justify-between'} glass-panel p-2 transition-all`}>

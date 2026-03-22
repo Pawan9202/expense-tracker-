@@ -1,4 +1,4 @@
- import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -10,7 +10,10 @@ import {
   ArrowDownRight,
   BarChart3,
   Wallet,
-  CreditCard
+  CreditCard,
+  Target,
+  PiggyBank,
+  AlertTriangle
 } from 'lucide-react';
 import { transactionService } from '../services/transactionService.js';
 import { analyticsService } from '../services/analyticsService.js';
@@ -20,6 +23,8 @@ const Dashboard = () => {
   const [summary, setSummary] = useState(null);
   const [recentTransactions, setRecentTransactions] = useState([]);
   const [insights, setInsights] = useState([]);
+  const [budgets, setBudgets] = useState([]);
+  const [goals, setGoals] = useState([]);
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
@@ -37,15 +42,21 @@ const Dashboard = () => {
       const startDate = startOfMonth.toISOString().split('T')[0];
       const endDate = endOfMonth.toISOString().split('T')[0];
 
-      const [summaryData, transactionsData, insightsData] = await Promise.all([
+      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
+
+      const [summaryData, transactionsData, insightsData, budgetsData, goalsData] = await Promise.all([
         transactionService.getSummary(startDate, endDate),
         transactionService.getTransactions({ limit: 5, sortBy: 'date', sortOrder: 'desc' }),
-        analyticsService.getInsights(startDate, endDate)
+        analyticsService.getInsights(startDate, endDate),
+        fetch('/api/budgets/progress', { headers }).then(r => r.json()).catch(() => ({ budgets: [] })),
+        fetch('/api/goals', { headers }).then(r => r.json()).catch(() => ({ goals: [] }))
       ]);
 
       setSummary(summaryData);
       setRecentTransactions(transactionsData.transactions);
-      setInsights(insightsData || []); // Ensure insights is always an array
+      setInsights(insightsData || []);
+      setBudgets(budgetsData.budgets?.slice(0, 3) || []);
+      setGoals(goalsData.goals?.slice(0, 2) || []);
     } catch (error) {
       console.error('Error loading dashboard data:', error);
       toast.error('Failed to load dashboard data.');
@@ -250,6 +261,88 @@ const Dashboard = () => {
           </div>
         </motion.div>
       </div>
+
+      {/* Budget Progress Section */}
+      {budgets.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-white flex items-center">
+              <PiggyBank size={20} className="mr-2 text-indigo-400" />
+              Budget Progress
+            </h3>
+            <Link to="/budgets" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">Manage</Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-3 gap-4">
+            {budgets.map((budget) => (
+              <div key={budget.id} className="glass-card p-4">
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-medium text-white">{budget.category}</span>
+                  <span className={`text-sm font-medium ${budget.isOverBudget ? 'text-rose-400' : 'text-gray-400'}`}>
+                    {budget.percentage?.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="relative h-2 bg-black/30 rounded-full overflow-hidden mb-2">
+                  <div
+                    className={`absolute inset-y-0 left-0 rounded-full ${
+                      budget.isOverBudget ? 'bg-rose-500' :
+                      budget.alertTriggered ? 'bg-amber-500' : 'bg-emerald-500'
+                    }`}
+                    style={{ width: `${Math.min(budget.percentage, 100)}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>₹{(budget.spent || 0).toLocaleString()}</span>
+                  <span>₹{(budget.amount || 0).toLocaleString()}</span>
+                </div>
+                {budget.alertTriggered && !budget.isOverBudget && (
+                  <div className="flex items-center mt-2 text-xs text-amber-400">
+                    <AlertTriangle size={12} className="mr-1" />
+                    Near limit
+                  </div>
+                )}
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
+
+      {/* Goals Progress Section */}
+      {goals.length > 0 && (
+        <motion.div variants={itemVariants}>
+          <div className="flex justify-between items-center mb-4">
+            <h3 className="text-lg font-bold text-white flex items-center">
+              <Target size={20} className="mr-2 text-emerald-400" />
+              Savings Goals
+            </h3>
+            <Link to="/goals" className="text-sm text-indigo-400 hover:text-indigo-300 transition-colors">View all</Link>
+          </div>
+          <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+            {goals.map((goal) => (
+              <div key={goal.id} className="glass-card p-4" style={{ borderTop: `3px solid ${goal.color || '#6366F1'}` }}>
+                <div className="flex justify-between items-center mb-2">
+                  <span className="font-semibold text-white">{goal.name}</span>
+                  <span className="text-sm font-medium text-gray-400">
+                    {goal.progress?.toFixed(0)}%
+                  </span>
+                </div>
+                <div className="relative h-2 bg-black/30 rounded-full overflow-hidden mb-2">
+                  <div
+                    className="absolute inset-y-0 left-0 rounded-full bg-emerald-500"
+                    style={{ width: `${goal.progress || 0}%` }}
+                  />
+                </div>
+                <div className="flex justify-between text-xs text-gray-500">
+                  <span>₹{(goal.currentAmount || 0).toLocaleString()}</span>
+                  <span>₹{(goal.targetAmount || 0).toLocaleString()}</span>
+                </div>
+                <p className="text-xs text-gray-500 mt-2">
+                  {goal.daysRemaining || 0} days remaining
+                </p>
+              </div>
+            ))}
+          </div>
+        </motion.div>
+      )}
     </motion.div>
   );
 };

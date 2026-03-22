@@ -9,6 +9,9 @@ const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
 const analyticsRoutes = require('./routes/analytics');
 const uploadRoutes = require('./routes/upload');
+const budgetRoutes = require('./routes/budgets');
+const goalRoutes = require('./routes/goals');
+const recurringRoutes = require('./routes/recurring');
 
 const app = express();
 const PORT = process.env.PORT || 5000;
@@ -25,6 +28,9 @@ app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
 app.use('/api/analytics', analyticsRoutes);
 app.use('/api/upload', uploadRoutes);
+app.use('/api/budgets', budgetRoutes);
+app.use('/api/goals', goalRoutes);
+app.use('/api/recurring', recurringRoutes);
 
 app.get('/api/health', (req, res) => {
   res.json({ status: 'OK', message: 'Personal Finance Assistant API is running' });
