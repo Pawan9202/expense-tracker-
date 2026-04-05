@@ -1,9 +1,15 @@
-const express = require('express');
-const cors = require('cors');
-const path = require('path');
 require('dotenv').config();
 
+const express = require('express');
+const cors = require('cors');
+const http = require('http');
+const { Server } = require('socket.io');
+const path = require('path');
+
+const config = require('./config');
+const logger = require('./utils/logger');
 const connectDB = require('./models/database');
+const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
 
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
@@ -12,17 +18,61 @@ const uploadRoutes = require('./routes/upload');
 const budgetRoutes = require('./routes/budgets');
 const goalRoutes = require('./routes/goals');
 const recurringRoutes = require('./routes/recurring');
+const whatsappRoutes = require('./routes/whatsapp');
+const insightsRoutes = require('./routes/insights');
+const notificationsRoutes = require('./routes/notifications');
+const exportImportRoutes = require('./routes/exportImport');
 
 const app = express();
-const PORT = process.env.PORT || 5000;
+const server = http.createServer(app);
 
-connectDB();
+const io = new Server(server, {
+  cors: {
+    origin: config.cors.origin,
+    methods: ['GET', 'POST']
+  }
+});
 
-app.use(cors());
-app.use(express.json());
-app.use(express.urlencoded({ extended: true }));
+app.set('io', io);
+app.set('config', config);
+
+app.use(cors({
+  origin: config.cors.origin,
+  credentials: true
+}));
+app.use(express.json({ limit: '10mb' }));
+app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
+
+io.on('connection', (socket) => {
+  logger.info(`Client connected: ${socket.id}`);
+
+  socket.on('join_user_room', (userId) => {
+    if (userId) {
+      socket.join(userId);
+      logger.info(`Client ${socket.id} joined room ${userId}`);
+    }
+  });
+
+  socket.on('disconnect', () => {
+    logger.info(`Client disconnected: ${socket.id}`);
+  });
+});
+
+app.use((req, res, next) => {
+  req.io = io;
+  next();
+});
+
+app.get('/api/health', (req, res) => {
+  res.json({
+    status: 'OK',
+    message: 'Personal Finance Assistant API is running',
+    timestamp: new Date().toISOString(),
+    environment: config.env
+  });
+});
 
 app.use('/api/auth', authRoutes);
 app.use('/api/transactions', transactionRoutes);
@@ -31,24 +81,48 @@ app.use('/api/upload', uploadRoutes);
 app.use('/api/budgets', budgetRoutes);
 app.use('/api/goals', goalRoutes);
 app.use('/api/recurring', recurringRoutes);
+app.use('/api/whatsapp', whatsappRoutes);
+app.use('/api/insights', insightsRoutes);
+app.use('/api/notifications', notificationsRoutes);
+app.use('/api/export-import', exportImportRoutes);
 
-app.get('/api/health', (req, res) => {
-  res.json({ status: 'OK', message: 'Personal Finance Assistant API is running' });
+app.use(notFoundHandler);
+app.use(errorHandler);
+
+const startServer = async () => {
+  try {
+    await connectDB();
+    logger.info('MongoDB connected');
+
+    // Try to connect Redis (optional - app works without it)
+    try {
+      const { connectRedis } = require('./services/cacheService');
+      await connectRedis();
+      logger.info('Redis initialized');
+    } catch (redisErr) {
+      logger.warn('Redis connection failed - continuing without cache:', redisErr.message);
+    }
+
+    server.listen(config.port, '0.0.0.0', () => {
+      logger.info(`Server running on port ${config.port}`);
+      logger.info(`Environment: ${config.env}`);
+      logger.info(`API available at http://localhost:${config.port}/api`);
+    });
+  } catch (error) {
+    logger.error('Failed to start server:', error);
+    process.exit(1);
+  }
+};
+
+process.on('unhandledRejection', (reason, promise) => {
+  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
 });
 
-app.use((err, req, res, next) => {
-  console.error(err.stack);
-  res.status(500).json({
-    error: 'Something went wrong!',
-    message: process.env.NODE_ENV === 'development' ? err.message : 'Internal server error'
-  });
+process.on('uncaughtException', (error) => {
+  logger.error('Uncaught Exception:', error);
+  process.exit(1);
 });
 
-app.use('*', (req, res) => {
-  res.status(404).json({ error: 'Route not found' });
-});
+startServer();
 
-app.listen(PORT, () => {
-  console.log(`Server running on port ${PORT}`);
-  console.log(`API available at http://localhost:${PORT}/api`);
-}); 
+module.exports = { app, server, io };

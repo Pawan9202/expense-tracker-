@@ -111,6 +111,7 @@ router.get('/me', authenticateToken, async (req, res) => {
         id: user._id,
         username: user.username,
         email: user.email,
+        whatsappNumber: user.whatsappNumber,
         createdAt: user.createdAt,
         updatedAt: user.updatedAt
       }
@@ -126,7 +127,7 @@ router.get('/me', authenticateToken, async (req, res) => {
 
 router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res) => {
   try {
-    const { username, email } = req.body;
+    const { username, email, whatsappNumber } = req.body;
     const updates = {};
 
     // Check if username is being updated and if it already exists
@@ -153,6 +154,23 @@ router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res
       updates.email = email;
     }
 
+    // Update whatsappNumber if provided
+    if (whatsappNumber !== undefined) {
+      if (whatsappNumber === '') {
+        updates.whatsappNumber = null; // Unlink
+      } else {
+        // Basic check to see if another user has this number
+        const existingNumber = await User.findOne({ whatsappNumber, _id: { $ne: req.user.id } });
+        if (existingNumber) {
+          return res.status(400).json({
+            error: 'Number already exists',
+            message: 'This WhatsApp number is already linked to another account'
+          });
+        }
+        updates.whatsappNumber = whatsappNumber;
+      }
+    }
+
     // Update user profile
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
@@ -173,6 +191,7 @@ router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res
         id: updatedUser._id,
         username: updatedUser.username,
         email: updatedUser.email,
+        whatsappNumber: updatedUser.whatsappNumber,
         createdAt: updatedUser.createdAt,
         updatedAt: updatedUser.updatedAt
       }

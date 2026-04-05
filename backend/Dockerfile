@@ -1,7 +1,17 @@
-FROM node:18-alpine
+FROM node:20-alpine
+
 WORKDIR /app
-COPY package.json package-lock.json ./
-RUN npm install
+
+RUN apk add --no-cache libc6-compat
+
+COPY package*.json ./
+
+RUN npm ci --only=production
+
 COPY . .
+
+RUN mkdir -p logs uploads && chmod 755 logs uploads
+
 EXPOSE 5000
-CMD ["npm", "start"] 
+
+CMD ["node", "server.js"]

@@ -225,12 +225,12 @@ const GoalModal = ({ isOpen, onClose, onSubmit, editingGoal, submitting }) => {
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="General">General</option>
-              <option value="Emergency">Emergency Fund</option>
-              <option value="Travel">Travel</option>
-              <option value="Education">Education</option>
-              <option value="Purchase">Purchase</option>
-              <option value="Investment">Investment</option>
+              <option value="General" className="bg-slate-900 text-white">General</option>
+              <option value="Emergency" className="bg-slate-900 text-white">Emergency Fund</option>
+              <option value="Travel" className="bg-slate-900 text-white">Travel</option>
+              <option value="Education" className="bg-slate-900 text-white">Education</option>
+              <option value="Purchase" className="bg-slate-900 text-white">Purchase</option>
+              <option value="Investment" className="bg-slate-900 text-white">Investment</option>
             </select>
           </div>
 

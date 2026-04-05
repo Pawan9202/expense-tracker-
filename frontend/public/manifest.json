@@ -1,0 +1,38 @@
+{
+  "name": "Finance Tracker Pro",
+  "short_name": "FinancePro",
+  "description": "AI-Powered Personal Finance Assistant",
+  "start_url": "/",
+  "display": "standalone",
+  "background_color": "#020617",
+  "theme_color": "#6366f1",
+  "orientation": "portrait-primary",
+  "icons": [
+    {
+      "src": "/icon-192.png",
+      "sizes": "192x192",
+      "type": "image/png",
+      "purpose": "any maskable"
+    },
+    {
+      "src": "/icon-512.png",
+      "sizes": "512x512",
+      "type": "image/png",
+      "purpose": "any maskable"
+    }
+  ],
+  "categories": ["finance", "productivity"],
+  "screenshots": [],
+  "shortcuts": [
+    {
+      "name": "Add Expense",
+      "url": "/transactions/new",
+      "description": "Quick add a new expense"
+    },
+    {
+      "name": "View Analytics",
+      "url": "/analytics",
+      "description": "View spending analytics"
+    }
+  ]
+}

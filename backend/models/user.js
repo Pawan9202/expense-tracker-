@@ -21,6 +21,12 @@ const userSchema = new mongoose.Schema({
     type: String,
     required: true,
     minlength: 6
+  },
+  whatsappNumber: {
+    type: String,
+    unique: true,
+    sparse: true,
+    trim: true
   }
 }, {
   timestamps: true

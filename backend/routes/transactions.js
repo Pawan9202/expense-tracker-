@@ -9,6 +9,7 @@ const {
   validateTransactionQuery,
   validateDateRange
 } = require('../middleware/validation');
+const { checkBudgetOnTransaction } = require('../services/alertService');
 
 const router = express.Router();
 
@@ -190,6 +191,12 @@ router.post('/', validateTransaction, async (req, res) => {
     });
 
     await transaction.save();
+
+    if (type === 'expense') {
+      const io = req.app.get('io');
+      await checkBudgetOnTransaction(req.user._id, category, parseFloat(amount), io);
+    }
+
     res.status(201).json({
       message: 'Transaction created successfully',
       transaction

@@ -1,168 +1,232 @@
-# Personal Finance Assistant
+# Personal Finance Assistant - PRO Edition
 
-A full-stack web application for personal finance management with user authentication, transaction tracking, receipt parsing (OCR), PDF import, and analytics dashboards. Built with React (Vite, Tailwind CSS), Node.js/Express, and MongoDB Atlas.
+A production-grade, AI-powered personal finance platform built with the MERN stack. Features intelligent spending insights, automated categorization, receipt OCR, and real-time updates.
 
 ---
 
-## Features
-- User registration, login, JWT authentication  
-- Income and expense tracking  
-- Transaction list with filters and pagination  
-- Analytics dashboards (charts by category/date)  
-- Receipt upload with OCR (image/PDF)  
-- PDF bank statement import  
-- Responsive UI with Tailwind CSS  
+## Architecture
+
+```
+├── backend/                 # Express API (Node.js)
+│   ├── config/              # Environment configuration
+│   ├── controllers/         # Business logic (future)
+│   ├── middleware/         # Auth, validation, rate limiting
+│   ├── models/             # MongoDB schemas
+│   ├── routes/             # API endpoints
+│   ├── services/           # AI, cache, storage services
+│   ├── tests/              # Jest unit tests
+│   ├── utils/              # Logger, helpers
+│   └── server.js           # Entry point
+│
+├── frontend/                # React + Vite + Tailwind
+│   ├── src/
+│   │   ├── components/     # Reusable UI components
+│   │   ├── context/        # Auth, state management
+│   │   ├── pages/          # Route pages
+│   │   ├── services/       # API clients
+│   │   └── App.jsx         # Main application
+│   └── nginx.conf          # Production nginx config
+│
+├── docker-compose.yml       # Full stack orchestration
+└── .github/workflows/       # CI/CD pipeline
+```
+
+---
+
+## Key Features
+
+### 🔐 Authentication & Security
+- JWT-based auth with refresh tokens
+- Password hashing with bcrypt
+- Rate limiting (express-rate-limit)
+- Input validation (express-validator)
+- CORS configuration
+
+### 🤖 AI-Powered Features
+- **Spending Insights**: Analyzes transactions to provide actionable recommendations
+- **Auto-Categorization**: AI suggests categories for new transactions
+- **Spending Predictions**: Forecasts future spending based on historical data
+- **Financial Health Score**: Calculates overall financial wellness (A-F grade)
+
+### ⚡ Performance
+- Redis caching for dashboard & analytics
+- Pagination for large datasets
+- Indexed MongoDB queries
+- WebSocket real-time updates
+
+### 📄 File Storage
+- Local filesystem (development)
+- AWS S3 (production)
+- Cloudinary (production)
+
+### 🐳 DevOps
+- Docker & docker-compose
+- GitHub Actions CI/CD
+- Multi-stage frontend builds
 
 ---
 
 ## Tech Stack
-- Frontend: React, Vite, Tailwind CSS  
-- Backend: Node.js, Express  
-- Database: MongoDB Atlas (Mongoose)  
-- OCR: Tesseract.js  
-- PDF Parsing: pdf-parse  
-- Charts: Chart.js  
+
+| Layer | Technology |
+|-------|------------|
+| Frontend | React 18, Vite, Tailwind CSS, Chart.js, Recharts |
+| Backend | Node.js 20, Express 4, Socket.io |
+| Database | MongoDB 7, Mongoose 7 |
+| Cache | Redis 7 |
+| AI | OpenAI GPT-4o-mini |
+| OCR | Tesseract.js |
+| Auth | JWT, bcryptjs |
+| Testing | Jest, Supertest |
+| DevOps | Docker, GitHub Actions |
 
 ---
 
-## Project Structure
-typeFace/
-├── frontend/ # React app (Vite, Tailwind)
-├── backend/ # Express API (Node.js)
-└── README.md
-
-
----
-
-## Getting Started (Local Development)
+## Getting Started
 
 ### Prerequisites
-- Node.js (v16+ recommended)  
-- npm or yarn  
-- MongoDB Atlas account (connection URI)  
+- Node.js 18+
+- Docker & Docker Compose
+- MongoDB (local or Atlas)
+- Redis (optional, for caching)
+
+### Local Development
+
+```bash
+# 1. Clone and install
+git clone https://github.com/your-username/finance-assistant.git
+cd finance-assistant
+
+# 2. Backend setup
+cd backend
+npm install
+cp .env.example .env  # Configure your environment
+
+# 3. Frontend setup
+cd ../frontend
+npm install
+cp .env.example .env
+
+# 4. Run with Docker (recommended)
+docker-compose up --build
+
+# Or run manually:
+# Terminal 1: cd backend && npm run dev
+# Terminal 2: cd frontend && npm run dev
+```
+
+### Environment Variables
+
+```env
+# Backend (.env)
+NODE_ENV=development
+PORT=5000
+MONGODB_URI=mongodb://localhost:27017/finance-assistant
+REDIS_URL=redis://localhost:6379
+JWT_SECRET=your-super-secret-jwt-key
+JWT_REFRESH_SECRET=your-refresh-secret
+OPENAI_API_KEY=sk-...
+CORS_ORIGIN=http://localhost:5173
+```
 
 ---
 
-## Setup Instructions
+## API Endpoints
 
-### 1. Clone the repository
+### Authentication
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/auth/register` | Register new user |
+| POST | `/api/auth/login` | Login user |
+| POST | `/api/auth/refresh` | Refresh access token |
+| GET | `/api/auth/me` | Get current user |
+| PUT | `/api/auth/profile` | Update profile |
+| PUT | `/api/auth/password` | Change password |
+
+### Transactions
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/transactions` | List (paginated) |
+| POST | `/api/transactions` | Create transaction |
+| GET | `/api/transactions/:id` | Get single |
+| PUT | `/api/transactions/:id` | Update |
+| DELETE | `/api/transactions/:id` | Delete |
+| GET | `/api/transactions/summary` | Financial summary |
+| POST | `/api/transactions/bulk` | Bulk import |
+
+### AI & Insights
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| GET | `/api/insights/spending` | AI spending insights |
+| GET | `/api/insights/predict` | Spending prediction |
+| GET | `/api/insights/health-score` | Financial health |
+| POST | `/api/insights/categorize` | Auto-categorize |
+
+### Upload
+| Method | Endpoint | Description |
+|--------|----------|-------------|
+| POST | `/api/upload/receipt` | OCR receipt upload |
+| POST | `/api/upload/statement` | PDF statement import |
+
+---
+
+## Deployment
+
+### Docker (Recommended)
+
 ```bash
-git clone https://github.com/your-username/your-repo-name.git
-cd your-repo-name
-2. Setup Backend
+# Production build
+docker-compose -f docker-compose.yml up -d --build
+
+# View logs
+docker-compose logs -f
+
+# Stop
+docker-compose down
+```
+
+### Manual Deploy
+
+**Backend (Render/Railway/AWS)**
+```bash
 cd backend
-npm install
-Create a .env file inside backend/:
-
-PORT=5000
-JWT_SECRET=your_jwt_secret
-MONGODB_URI=your_mongodb_atlas_uri
-GEMINI_API_KEY=your_google_gemini_api_key
-NODE_ENV=development
-Start backend server:
-
+npm install --production
 npm start
-Backend will run on:
-http://localhost:5000
+```
 
-3. Setup Frontend
+**Frontend (Vercel)**
+```bash
 cd frontend
-npm install
-Create a .env file inside frontend/:
+npm run build
+# Deploy dist/ to Vercel
+```
 
-VITE_API_URL=http://localhost:5000/api
-Start frontend:
+---
 
-npm run dev
-Frontend will run on:
-http://localhost:5173 (or as shown in terminal)
+## Running Tests
 
-API Endpoints (Summary)
-POST /api/auth/register Register user
+```bash
+cd backend
+npm test           # Run all tests
+npm run lint       # Lint code
+```
 
-POST /api/auth/login Login
+---
 
-GET /api/auth/profile Get profile
+## Production Checklist
 
-PUT /api/auth/profile Update profile
+- [ ] Set strong JWT secrets
+- [ ] Configure MongoDB Atlas (or secure local)
+- [ ] Set up Redis for caching
+- [ ] Configure S3/Cloudinary for file storage
+- [ ] Set up OpenAI API key
+- [ ] Enable HTTPS
+- [ ] Configure CORS for production domain
+- [ ] Set up monitoring (Sentry, etc.)
+- [ ] Configure backups for MongoDB
 
-PUT /api/auth/password Change password
+---
 
-DELETE /api/auth/account Delete account
+## License
 
-GET /api/transactions List transactions
-
-POST /api/transactions Add transaction
-
-PUT /api/transactions/:id Update transaction
-
-DELETE /api/transactions/:id Delete transaction
-
-GET /api/transactions/summary Summary
-
-POST /api/transactions/bulk Bulk import
-
-GET /api/analytics/* Analytics endpoints
-
-POST /api/upload/receipt Upload receipt (OCR)
-
-POST /api/upload/statement Upload PDF statement
-
-Database Models
-User
-
-username
-
-email
-
-password (hashed)
-
-Transaction
-
-userId
-
-amount
-
-type
-
-category
-
-description
-
-date
-
-receiptUrl
-
-tags
-
-Category
-
-name
-
-type
-
-color
-
-userId
-
-Scripts
-Backend
-npm start – Start server
-
-npm run dev – Development mode (nodemon)
-
-npm run setup-db – Seed database
-
-npm run test-connection – Test MongoDB connection
-
-Frontend
-npm run dev – Start dev server
-
-npm run build – Build for production
-
-npm run preview – Preview production build
-
-npm run lint – Run ESLint
-
-License
-MIT 
+MIT

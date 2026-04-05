@@ -31,7 +31,7 @@ const createDemoUser = async () => {
     const demoUser = new User({
       username: 'demo',
       email: 'demo@example.com',
-      password: 'demo123'
+      password: 'Demo123'
     });
 
     await demoUser.save();
@@ -84,7 +84,7 @@ const setupDatabase = async () => {
     await insertSampleTransactions(demoUserId);
     
     console.log('Database setup completed successfully!');
-    console.log('Demo credentials: username: demo, password: demo123');
+    console.log('Demo credentials: username: demo, password: Demo123');
     
     mongoose.connection.close();
   } catch (error) {

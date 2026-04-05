@@ -170,9 +170,9 @@ const BudgetModal = ({ isOpen, onClose, onSubmit, editingBudget, categories, sub
               className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
             >
-              <option value="">Select category...</option>
+              <option value="" className="bg-slate-900 text-white">Select category...</option>
               {categories.filter(c => c.type === 'expense').map(cat => (
-                <option key={cat.id} value={cat.name}>{cat.name}</option>
+                <option key={cat.id} value={cat.name} className="bg-slate-900 text-white">{cat.name}</option>
               ))}
             </select>
           </div>
@@ -200,9 +200,9 @@ const BudgetModal = ({ isOpen, onClose, onSubmit, editingBudget, categories, sub
               onChange={(e) => setFormData({ ...formData, period: e.target.value })}
               className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
             >
-              <option value="weekly">Weekly</option>
-              <option value="monthly">Monthly</option>
-              <option value="yearly">Yearly</option>
+              <option value="weekly" className="bg-slate-900 text-white">Weekly</option>
+              <option value="monthly" className="bg-slate-900 text-white">Monthly</option>
+              <option value="yearly" className="bg-slate-900 text-white">Yearly</option>
             </select>
           </div>
 

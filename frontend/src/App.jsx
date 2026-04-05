@@ -1,10 +1,11 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
-import { Toaster } from 'react-hot-toast';
+import { Toaster, toast } from 'react-hot-toast';
+import { io } from 'socket.io-client';
 import { useAuth } from './context/AuthContext.jsx';
 import { lazy, Suspense } from 'react';
 import Navbar from './components/Navbar.jsx';
 import QuickAddModal from './components/QuickAddModal.jsx';
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Transactions = lazy(() => import('./pages/Transactions.jsx'));
@@ -52,6 +53,29 @@ const ToastConfig = () => (
 function App() {
   const { user, loading } = useAuth();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  useEffect(() => {
+    if (user?.id) {
+      // Assuming Vite API URL env or fallback to localhost:5000
+      const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
+      
+      socket.emit('join_user_room', user.id);
+      
+      socket.on('transaction_added', (transaction) => {
+        toast.success(`WhatsApp Bot: Added ${transaction.type === 'expense' ? 'Expense' : 'Income'} - ${transaction.description}`, {
+          icon: '🤖',
+          duration: 5000,
+        });
+        
+        // Dispatch custom event so pages like Dashboard/Transactions can refetch if they are listening
+        window.dispatchEvent(new Event('transaction_updated'));
+      });
+      
+      return () => {
+        socket.disconnect();
+      };
+    }
+  }, [user?.id]);
 
   if (loading) {
     return (
