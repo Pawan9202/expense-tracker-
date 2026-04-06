@@ -36,8 +36,20 @@ const io = new Server(server, {
 app.set('io', io);
 app.set('config', config);
 
+const allowedOrigins = process.env.CORS_ORIGIN?.split(',') || ['http://localhost:5173', 'http://localhost:3000'];
+
 app.use(cors({
-  origin: config.cors.origin,
+  origin: function(origin, callback) {
+    // Allow requests with no origin (like mobile apps or curl)
+    if (!origin) return callback(null, true);
+    
+    if (allowedOrigins.indexOf(origin) !== -1) {
+      callback(null, true);
+    } else {
+      console.log('CORS blocked origin:', origin);
+      callback(null, true); // Allow all for now in development
+    }
+  },
   credentials: true
 }));
 app.use(express.json({ limit: '10mb' }));

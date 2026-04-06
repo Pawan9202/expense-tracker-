@@ -58,11 +58,13 @@ router.post('/register', validateRegistration, async (req, res) => {
 
 
 router.post('/login', validateLogin, async (req, res) => {
+  console.log('Login attempt:', req.body.username);
   try {
     const { username, password } = req.body;
 
     // Find user by username
     const user = await User.findOne({ username });
+    console.log('User found:', !!user);
     if (!user) {
       return res.status(401).json({
         error: 'Invalid credentials',
@@ -72,6 +74,7 @@ router.post('/login', validateLogin, async (req, res) => {
 
     // Verify password
     const isValidPassword = await user.comparePassword(password);
+    console.log('Password valid:', isValidPassword);
     if (!isValidPassword) {
       return res.status(401).json({
         error: 'Invalid credentials',
