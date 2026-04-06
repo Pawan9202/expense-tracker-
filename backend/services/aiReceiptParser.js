@@ -1,16 +1,17 @@
 const fs = require("fs");
 const path = require("path");
 
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("CRITICAL: GEMINI_API_KEY is not defined in your .env file.");
-}
-
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1/models/gemini-2.5-flash:generateContent";
 
-
-
 class AIReceiptParserService {
+  static getApiKey() {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY environment variable is not defined");
+    }
+    return process.env.GEMINI_API_KEY;
+  }
+
   static fileToBase64(filePath) {
     return fs.readFileSync(filePath).toString("base64");
   }
@@ -54,7 +55,7 @@ Example:
       const base64 = this.fileToBase64(imagePath);
       const mimeType = this.getMimeType(imagePath);
 
-      const res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
+      const res = await fetch(`${GEMINI_URL}?key=${this.getApiKey()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({

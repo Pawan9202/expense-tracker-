@@ -1,11 +1,14 @@
-if (!process.env.GEMINI_API_KEY) {
-  throw new Error("CRITICAL: GEMINI_API_KEY is not defined.");
-}
-
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1/models/gemini-1.5-flash:generateContent";
 
 class AIStatementParserService {
+  static getApiKey() {
+    if (!process.env.GEMINI_API_KEY) {
+      throw new Error("GEMINI_API_KEY environment variable is not defined");
+    }
+    return process.env.GEMINI_API_KEY;
+  }
+
   static async parseWithAI(text, userId) {
     const prompt = `
 You are an expert financial data extraction tool. Extract all transactions.
@@ -41,7 +44,7 @@ Example:
     try {
       console.log("Sending statement to Gemini...");
 
-      const res = await fetch(`${GEMINI_URL}?key=${process.env.GEMINI_API_KEY}`, {
+      const res = await fetch(`${GEMINI_URL}?key=${this.getApiKey()}`, {
         method: "POST",
         headers: { "Content-Type": "application/json" },
         body: JSON.stringify({
