@@ -58,12 +58,14 @@ jobs:
     steps:
       - uses: actions/checkout@v4
 
+      - name: Set up Docker
+        uses: docker/setup-docker@v2
+
       - name: Build Docker images
-        run: |
-          docker-compose build
+        run: docker compose build --parallel
 
       - name: Test Docker containers
-        run: docker-compose up -d && sleep 10 && docker-compose ps
+        run: docker compose up -d && sleep 10 && docker compose ps
 
   deploy-backend:
     needs: docker-build
