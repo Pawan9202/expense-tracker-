@@ -51,7 +51,7 @@ router.post('/register', validateRegistration, async (req, res) => {
     console.error('Registration error:', error);
     res.status(500).json({
       error: 'Registration failed',
-      message: 'An error occurred during registration'
+      message: error.message || 'An error occurred during registration'
     });
   }
 });
@@ -96,7 +96,7 @@ router.post('/login', validateLogin, async (req, res) => {
     console.error('Login error:', error);
     res.status(500).json({
       error: 'Login failed',
-      message: 'An error occurred during login'
+      message: error.message || 'An error occurred during login'
     });
   }
 });
