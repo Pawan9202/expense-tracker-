@@ -2,6 +2,7 @@ import api from './api';
 
 export const authService = {
   async register(username, email, password) {
+    console.log('Register request to:', api.defaults.baseURL + '/auth/register');
     const response = await api.post('/auth/register', {
       username,
       email,
@@ -11,6 +12,7 @@ export const authService = {
   },
 
   async login(username, password) {
+    console.log('Login request to:', api.defaults.baseURL + '/auth/login');
     const response = await api.post('/auth/login', {
       username,
       password
