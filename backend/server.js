@@ -114,15 +114,18 @@ const startServer = async () => {
   }
 };
 
-process.on('unhandledRejection', (reason, promise) => {
-  logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
-});
+// Only start server and add handlers if not in test environment
+if (process.env.NODE_ENV !== 'test') {
+  process.on('unhandledRejection', (reason, promise) => {
+    logger.error('Unhandled Rejection at:', promise, 'reason:', reason);
+  });
 
-process.on('uncaughtException', (error) => {
-  logger.error('Uncaught Exception:', error);
-  process.exit(1);
-});
+  process.on('uncaughtException', (error) => {
+    logger.error('Uncaught Exception:', error);
+    process.exit(1);
+  });
 
-startServer();
+  startServer();
+}
 
 module.exports = { app, server, io };

@@ -8,5 +8,12 @@ module.exports = {
     '!**/tests/**'
   ],
   coverageDirectory: 'coverage',
-  verbose: true
+  verbose: true,
+  testEnvironmentOptions: {
+    NODE_ENV: 'test'
+  },
+  globals: {
+    NODE_ENV: 'test'
+  },
+  forceExit: true
 };
