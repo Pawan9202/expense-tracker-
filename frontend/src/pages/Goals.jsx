@@ -156,6 +156,16 @@ const GoalModal = ({ isOpen, onClose, onSubmit, editingGoal, submitting }) => {
     }
   }, [editingGoal, isOpen]);
 
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
@@ -163,13 +173,19 @@ const GoalModal = ({ isOpen, onClose, onSubmit, editingGoal, submitting }) => {
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-[#020617]/90 backdrop-blur-xl flex justify-center items-center z-50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={handleBackdropClick}
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
@@ -275,6 +291,16 @@ const GoalModal = ({ isOpen, onClose, onSubmit, editingGoal, submitting }) => {
 const ContributeModal = ({ isOpen, onClose, onSubmit, goal, submitting }) => {
   const [amount, setAmount] = useState('');
 
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(parseFloat(amount));
@@ -282,13 +308,19 @@ const ContributeModal = ({ isOpen, onClose, onSubmit, goal, submitting }) => {
 
   if (!isOpen || !goal) return null;
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-[#020617]/90 backdrop-blur-xl flex justify-center items-center z-50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={handleBackdropClick}
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
@@ -353,10 +385,16 @@ const Goals = () => {
       const res = await fetch('/api/goals', {
         headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
       });
+      
+      if (!res.ok) {
+        throw new Error('Failed to load goals');
+      }
+      
       const data = await res.json();
-      setGoals(data.goals || []);
+      setGoals(Array.isArray(data.goals) ? data.goals : []);
     } catch (error) {
       console.error('Error loading goals:', error);
+      setGoals([]);
       toast.error('Failed to load goals');
     } finally {
       setLoading(false);

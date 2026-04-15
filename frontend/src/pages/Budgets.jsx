@@ -125,6 +125,16 @@ const BudgetModal = ({ isOpen, onClose, onSubmit, editingBudget, categories, sub
     }
   }, [editingBudget, isOpen]);
 
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit({
@@ -135,13 +145,19 @@ const BudgetModal = ({ isOpen, onClose, onSubmit, editingBudget, categories, sub
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-[#020617]/90 backdrop-blur-xl flex justify-center items-center z-50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={handleBackdropClick}
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
@@ -169,8 +185,11 @@ const BudgetModal = ({ isOpen, onClose, onSubmit, editingBudget, categories, sub
               onChange={(e) => setFormData({ ...formData, category: e.target.value })}
               className="w-full px-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white focus:outline-none focus:ring-2 focus:ring-indigo-500"
               required
+              disabled={categories.filter(c => c.type === 'expense').length === 0}
             >
-              <option value="" className="bg-slate-900 text-white">Select category...</option>
+              <option value="" className="bg-slate-900 text-white">
+                {categories.filter(c => c.type === 'expense').length === 0 ? 'No expense categories available' : 'Select category...'}
+              </option>
               {categories.filter(c => c.type === 'expense').map(cat => (
                 <option key={cat.id} value={cat.name} className="bg-slate-900 text-white">{cat.name}</option>
               ))}
@@ -248,13 +267,19 @@ const Budgets = () => {
         fetch('/api/transactions/categories', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
       ]);
       
+      if (!budgetsRes.ok || !categoriesRes.ok) {
+        throw new Error('Failed to load data');
+      }
+      
       const budgetsData = await budgetsRes.json();
       const categoriesData = await categoriesRes.json();
       
-      setBudgets(budgetsData.budgets || []);
-      setCategories(categoriesData.categories || []);
+      setBudgets(Array.isArray(budgetsData.budgets) ? budgetsData.budgets : []);
+      setCategories(Array.isArray(categoriesData.categories) ? categoriesData.categories : []);
     } catch (error) {
       console.error('Error loading data:', error);
+      setBudgets([]);
+      setCategories([]);
       toast.error('Failed to load budgets');
     } finally {
       setLoading(false);

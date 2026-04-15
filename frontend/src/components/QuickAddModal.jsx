@@ -1,6 +1,6 @@
-import { useState } from 'react';
+import { useState, useEffect } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
-import { X, ArrowUpRight, ArrowDownRight, DollarSign, Calendar, Tag, FileText, Zap } from 'lucide-react';
+import { X, ArrowUpRight, ArrowDownRight, Calendar, Tag, FileText, Zap } from 'lucide-react';
 import { transactionService } from '../services/transactionService.js';
 import toast from 'react-hot-toast';
 import { useForm } from 'react-hook-form';
@@ -9,6 +9,7 @@ const QuickAddModal = ({ isOpen, onClose }) => {
   const [submitting, setSubmitting] = useState(false);
   const [categories, setCategories] = useState([]);
   const [loadingCategories, setLoadingCategories] = useState(false);
+  const [categoriesError, setCategoriesError] = useState(false);
 
   const { register, handleSubmit, reset, watch, formState: { errors } } = useForm({
     defaultValues: {
@@ -23,22 +24,29 @@ const QuickAddModal = ({ isOpen, onClose }) => {
   const transactionType = watch('type');
 
   const loadCategories = async () => {
-    if (categories.length === 0) {
-      setLoadingCategories(true);
-      try {
-        const cats = await transactionService.getCategories();
-        setCategories(cats || []);
-      } catch (error) {
-        console.error('Error loading categories:', error);
-      } finally {
-        setLoadingCategories(false);
-      }
+    if (categories.length > 0 || loadingCategories) return;
+    setLoadingCategories(true);
+    setCategoriesError(false);
+    try {
+      const cats = await transactionService.getCategories();
+      setCategories(cats || []);
+    } catch (error) {
+      console.error('Error loading categories:', error);
+      setCategoriesError(true);
+    } finally {
+      setLoadingCategories(false);
     }
   };
 
-  if (isOpen) {
-    loadCategories();
-  }
+  useEffect(() => {
+    if (isOpen) {
+      loadCategories();
+    }
+  }, [isOpen, loadCategories]);
+
+  useEffect(() => {
+    reset({ ...watch(), category: '' });
+  }, [transactionType, reset]);
 
   const onSubmit = async (data) => {
     setSubmitting(true);
@@ -61,6 +69,22 @@ const QuickAddModal = ({ isOpen, onClose }) => {
 
   const filteredCategories = categories.filter(c => c.type === transactionType);
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   return (
     <AnimatePresence>
       {isOpen && (
@@ -69,7 +93,7 @@ const QuickAddModal = ({ isOpen, onClose }) => {
           animate={{ opacity: 1 }}
           exit={{ opacity: 0 }}
           className="fixed inset-0 bg-[#020617]/90 backdrop-blur-xl flex justify-center items-center z-50 p-4"
-          onClick={(e) => e.target === e.currentTarget && onClose()}
+          onClick={handleBackdropClick}
         >
           <motion.div 
             initial={{ scale: 0.9, y: 20, opacity: 0 }}
@@ -151,8 +175,11 @@ const QuickAddModal = ({ isOpen, onClose }) => {
                         id="category" 
                         {...register('category', { required: 'Category is required' })} 
                         className="w-full pl-10 pr-4 py-3 bg-black/20 border border-white/10 rounded-xl text-white placeholder-gray-500 focus:outline-none focus:ring-2 focus:ring-[#6366F1] focus:border-transparent transition-all appearance-none"
+                        disabled={loadingCategories}
                       >
-                        <option value="" className="bg-gray-900">Select...</option>
+                        <option value="" className="bg-gray-900">
+                          {loadingCategories ? 'Loading...' : categoriesError ? 'Error loading' : 'Select...'}
+                        </option>
                         {filteredCategories.map(cat => (
                           <option key={cat.id} value={cat.name} className="bg-gray-900">{cat.name}</option>
                         ))}

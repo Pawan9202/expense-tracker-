@@ -29,3 +29,6 @@ Thumbs.db
 # Temporary files
 nul
 *.tmp
+
+.vercel
+.env*.local

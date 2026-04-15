@@ -148,6 +148,16 @@ const RecurringModal = ({ isOpen, onClose, onSubmit, editingRecurring, categorie
     }
   }, [editingRecurring, isOpen]);
 
+  useEffect(() => {
+    const handleEscape = (e) => {
+      if (e.key === 'Escape' && isOpen) {
+        onClose();
+      }
+    };
+    document.addEventListener('keydown', handleEscape);
+    return () => document.removeEventListener('keydown', handleEscape);
+  }, [isOpen, onClose]);
+
   const handleSubmit = (e) => {
     e.preventDefault();
     onSubmit(formData);
@@ -155,13 +165,19 @@ const RecurringModal = ({ isOpen, onClose, onSubmit, editingRecurring, categorie
 
   if (!isOpen) return null;
 
+  const handleBackdropClick = (e) => {
+    if (e.target === e.currentTarget) {
+      onClose();
+    }
+  };
+
   return (
     <motion.div
       initial={{ opacity: 0 }}
       animate={{ opacity: 1 }}
       exit={{ opacity: 0 }}
       className="fixed inset-0 bg-[#020617]/90 backdrop-blur-xl flex justify-center items-center z-50 p-4"
-      onClick={(e) => e.target === e.currentTarget && onClose()}
+      onClick={handleBackdropClick}
     >
       <motion.div
         initial={{ scale: 0.9, y: 20 }}
