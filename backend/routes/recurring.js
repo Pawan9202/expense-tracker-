@@ -8,8 +8,7 @@ router.use(authenticateToken);
 router.get('/', async (req, res) => {
   try {
     const recurring = await RecurringTransaction.find({ 
-      userId: req.user._id, 
-      isActive: true 
+      userId: req.user._id 
     }).sort({ nextOccurrence: 1 });
     res.json({ recurring });
   } catch (error) {
@@ -76,7 +75,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { amount, type, category, description, frequency, endDate, isActive, autoProcess } = req.body;
+    const { amount, type, category, description, frequency, startDate, endDate, isActive, autoProcess } = req.body;
     
     const recurring = await RecurringTransaction.findOne({ 
       _id: req.params.id, 
@@ -92,6 +91,13 @@ router.put('/:id', async (req, res) => {
     if (category !== undefined) recurring.category = category;
     if (description !== undefined) recurring.description = description;
     if (frequency !== undefined) recurring.frequency = frequency;
+    if (startDate !== undefined) {
+      recurring.startDate = new Date(startDate);
+      recurring.nextOccurrence = recurring.calculateNextOccurrence(new Date(startDate));
+    }
+    if (frequency !== undefined && startDate === undefined) {
+      recurring.nextOccurrence = recurring.calculateNextOccurrence(recurring.startDate);
+    }
     if (endDate !== undefined) recurring.endDate = endDate ? new Date(endDate) : null;
     if (isActive !== undefined) recurring.isActive = isActive;
     if (autoProcess !== undefined) recurring.autoProcess = autoProcess;

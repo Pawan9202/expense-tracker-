@@ -72,7 +72,7 @@ router.post('/', async (req, res) => {
 
 router.put('/:id', async (req, res) => {
   try {
-    const { amount, alertThreshold, isActive } = req.body;
+    const { category, amount, period, alertThreshold, isActive } = req.body;
     
     const budget = await Budget.findOne({ 
       _id: req.params.id, 
@@ -83,7 +83,9 @@ router.put('/:id', async (req, res) => {
       return res.status(404).json({ error: 'Budget not found' });
     }
     
+    if (category !== undefined) budget.category = category;
     if (amount !== undefined) budget.amount = amount;
+    if (period !== undefined) budget.period = period;
     if (alertThreshold !== undefined) budget.alertThreshold = alertThreshold;
     if (isActive !== undefined) budget.isActive = isActive;
     

@@ -1,6 +1,6 @@
 import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Repeat, X, Edit, Trash2, Calendar, ArrowUpRight, ArrowDownRight, Play, Pause } from 'lucide-react';
+import { Plus, Repeat, X, Edit, Trash2, Calendar, ArrowUpRight, ArrowDownRight, Play, Pause, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const containerVariants = {
@@ -34,7 +34,7 @@ const frequencyLabels = {
   yearly: 'Yearly'
 };
 
-const RecurringCard = ({ recurring, onEdit, onDelete, onToggle, categories }) => {
+const RecurringCard = ({ recurring, onEdit, onDelete, onToggle }) => {
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
       style: 'currency',
@@ -362,7 +362,10 @@ const Recurring = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(data)
+        body: JSON.stringify({
+          ...data,
+          amount: parseFloat(data.amount)
+        })
       });
       
       if (!res.ok) throw new Error('Failed to save');
@@ -421,6 +424,23 @@ const Recurring = () => {
     }
   };
 
+  const handleProcess = async () => {
+    try {
+      const res = await fetch('/api/recurring/process', {
+        method: 'POST',
+        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
+      });
+      
+      if (!res.ok) throw new Error('Failed to process');
+      
+      const data = await res.json();
+      toast.success(data.message);
+      loadData();
+    } catch (error) {
+      toast.error(error.message);
+    }
+  };
+
   if (loading) return <PageLoader />;
 
   const formatCurrency = (amount) => {
@@ -452,14 +472,24 @@ const Recurring = () => {
           <p className="text-gray-400 mt-1">Manage your regular income and expenses.</p>
         </motion.div>
         
-        <motion.button
-          variants={itemVariants}
-          onClick={() => { setEditingRecurring(null); setShowModal(true); }}
-          className="btn btn-primary"
-        >
-          <Plus size={18} className="mr-2" />
-          Add Recurring
-        </motion.button>
+        <motion.div variants={itemVariants} className="flex space-x-3">
+          <button
+            onClick={handleProcess}
+            className="btn btn-secondary"
+            title="Process all due recurring transactions"
+          >
+            <Zap size={18} className="mr-2" />
+            Process Now
+          </button>
+          <motion.button
+            variants={itemVariants}
+            onClick={() => { setEditingRecurring(null); setShowModal(true); }}
+            className="btn btn-primary"
+          >
+            <Plus size={18} className="mr-2" />
+            Add Recurring
+          </motion.button>
+        </motion.div>
       </div>
 
       {recurring.length > 0 && (

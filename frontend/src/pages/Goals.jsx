@@ -417,7 +417,10 @@ const Goals = () => {
           'Content-Type': 'application/json',
           Authorization: `Bearer ${localStorage.getItem('token')}`
         },
-        body: JSON.stringify(formData)
+        body: JSON.stringify({
+          ...formData,
+          targetAmount: parseFloat(formData.targetAmount)
+        })
       });
       
       if (!res.ok) throw new Error('Failed to save goal');

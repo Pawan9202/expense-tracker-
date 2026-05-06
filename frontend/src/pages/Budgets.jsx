@@ -1,6 +1,6 @@
-import { useState, useEffect, lazy, Suspense } from 'react';
+import { useState, useEffect } from 'react';
 import { motion } from 'framer-motion';
-import { Plus, Target, TrendingUp, TrendingDown, AlertTriangle, X, Edit, Trash2 } from 'lucide-react';
+import { Plus, Target, TrendingDown, AlertTriangle, X, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
 const containerVariants = {
