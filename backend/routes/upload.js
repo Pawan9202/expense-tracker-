@@ -67,6 +67,36 @@ const uploadStatement = multer({
 
 
 
+const getMatchedCategory = async (description) => {
+  try {
+    const categories = await Category.find({ type: 'expense' }).lean();
+    const categoryNames = categories.map(c => c.name);
+    const d = description ? description.toLowerCase() : '';
+
+    const keywordToCategory = [
+      { keywords: ['food', 'dining', 'restaurant', 'cafe', 'coffee', 'pizza', 'burger', 'swiggy', 'zomato', 'milk', 'bakery', 'grocery', 'supermarket', 'mart', 'fresh', 'big bazaar', 'dmart', 'more', 'spencer'], category: 'Food & Dining' },
+      { keywords: ['fuel', 'petrol', 'diesel', 'gas', 'uber', 'ola', 'transport', 'metro', 'bus', 'train', 'taxi', 'parking', 'toll', 'vehicle'], category: 'Transportation' },
+      { keywords: ['amazon', 'flipkart', 'shopping', 'mall', 'clothes', 'shoes', 'electronics', 'mobile', 'phone', 'laptop'], category: 'Shopping' },
+      { keywords: ['netflix', 'spotify', 'movie', 'cinema', 'game', 'entertainment', 'pvr', 'inox', 'bookmyshow'], category: 'Entertainment' },
+      { keywords: ['electric', 'wifi', 'recharge', 'bill', 'internet', 'water', 'rent', 'maintenance', 'broadband', 'electricity'], category: 'Bills & Utilities' },
+      { keywords: ['medical', 'pharmacy', 'doctor', 'hospital', 'clinic', 'health', 'medicine', 'apollo', 'medplus'], category: 'Healthcare' },
+      { keywords: ['education', 'school', 'college', 'tuition', 'course', 'book', 'udemy', 'coursera'], category: 'Education' },
+      { keywords: ['hotel', 'flight', 'travel', 'trip', 'airbnb', 'make my trip', 'oyo', 'goibibo', 'booking'], category: 'Travel' },
+    ];
+
+    for (const { keywords, category } of keywordToCategory) {
+      if (keywords.some(k => d.includes(k)) && categoryNames.includes(category)) {
+        return category;
+      }
+    }
+
+    return categoryNames.find(name => name.includes('Other')) || 'Other Expenses';
+  } catch (error) {
+    console.error('Category matching error:', error);
+    return 'Other Expenses';
+  }
+};
+
 router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
   if (!req.file) {
     return res.status(400).json({ error: 'No file uploaded', message: 'Please select an image file.' });
@@ -75,28 +105,38 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
 
   try {
     if (typeof AIReceiptParserService.parseWithAI !== 'function') {
-      console.error("CRITICAL ERROR: AIReceiptParserService.parseWithAI is not a function. This is likely caused by an error during the service's initialization (e.g., missing GEMINI_API_KEY in .env).");
-      throw new Error("AI Receipt Parser service is not available. Please check the server logs for more details.");
+      console.error("CRITICAL ERROR: AIReceiptParserService.parseWithAI is not a function.");
+      throw new Error("AI Receipt Parser service is not available.");
     }
 
-    // Call the AI Receipt Parser service
     const result = await AIReceiptParserService.parseWithAI(filePath);
 
-    if (!result.success || !result.data.totalAmount) {
-      return res.status(400).json({ 
-          error: 'AI processing failed', 
-          message: 'The AI could not extract a valid total amount from the receipt.' 
-      });
+    const { totalAmount, transactionDate, description } = result.data;
+    const matchedCategory = await getMatchedCategory(description);
+
+    const responseData = {
+      success: true,
+      extractedData: {
+        amount: totalAmount,
+        category: matchedCategory,
+        date: transactionDate || new Date().toISOString().split('T')[0],
+        description: description || 'Not detected',
+        confidence: totalAmount ? 'high' : 'low',
+      },
+      rawText: JSON.stringify(result.rawResponse || result.data),
+      fileUrl: `/uploads/${req.file.filename}`
+    };
+
+    if (!totalAmount) {
+      responseData.message = 'Receipt processed but amount could not be detected. Please enter it manually on the Transactions page.';
+      return res.json(responseData);
     }
 
-    const { totalAmount, transactionDate, description } = result.data;
-    
-    // Create a new transaction from the AI's structured response
     const transaction = new Transaction({
       userId: req.user._id,
       amount: totalAmount,
-      type: 'expense', // Receipts are always expenses
-      category: AIStatementParserService.categorizeTransaction(description, true), // Reuse categorization logic
+      type: 'expense',
+      category: matchedCategory,
       description: description || 'Transaction from receipt',
       date: transactionDate ? new Date(transactionDate) : new Date(),
       receiptUrl: `/uploads/${req.file.filename}`
@@ -104,19 +144,18 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
 
     await transaction.save();
 
-    res.json({
-      message: 'Receipt processed successfully with AI',
-      extractedData: result.data,
-      transaction: transaction,
-      fileUrl: `/uploads/${req.file.filename}`
-    });
+    responseData.message = 'Receipt processed successfully with AI';
+    responseData.transaction = transaction;
+
+    res.json(responseData);
 
   } catch (error) {
     console.error('AI Receipt processing error:', error);
-    res.status(500).json({ error: 'Receipt upload failed', message: error.message });
-  } finally {
-    // We keep the receipt file because the transaction links to it via receiptUrl
-    // A separate cleanup job could be implemented to delete old files.
+    res.status(500).json({
+      success: false,
+      error: 'Receipt processing failed',
+      message: error.message
+    });
   }
 });
 

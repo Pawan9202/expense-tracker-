@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Target, TrendingDown, AlertTriangle, X, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -165,7 +165,7 @@ const BudgetModal = ({ isOpen, onClose, onSubmit, editingBudget, categories, sub
         exit={{ scale: 0.9, y: 20 }}
         className="glass-panel w-full max-w-md p-6 relative"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
         
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white flex items-center">
@@ -320,6 +320,11 @@ const Budgets = () => {
     }
   };
 
+  const handleCloseModal = useCallback(() => {
+    setShowModal(false);
+    setEditingBudget(null);
+  }, []);
+
   const handleEdit = (budget) => {
     setEditingBudget(budget);
     setShowModal(true);
@@ -423,14 +428,16 @@ const Budgets = () => {
         </motion.div>
       )}
 
-      <BudgetModal
-        isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditingBudget(null); }}
-        onSubmit={handleSubmit}
-        editingBudget={editingBudget}
-        categories={categories}
-        submitting={submitting}
-      />
+      <AnimatePresence>
+        <BudgetModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          editingBudget={editingBudget}
+          categories={categories}
+          submitting={submitting}
+        />
+      </AnimatePresence>
     </motion.div>
   );
 };

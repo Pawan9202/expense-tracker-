@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Target, X, Edit, Trash2, Clock, CheckCircle, TrendingUp, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -193,7 +193,7 @@ const GoalModal = ({ isOpen, onClose, onSubmit, editingGoal, submitting }) => {
         exit={{ scale: 0.9, y: 20 }}
         className="glass-panel w-full max-w-md p-6 relative"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
         
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white flex items-center">
@@ -328,7 +328,7 @@ const ContributeModal = ({ isOpen, onClose, onSubmit, goal, submitting }) => {
         exit={{ scale: 0.9, y: 20 }}
         className="glass-panel w-full max-w-sm p-6 relative"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl" style={{ backgroundColor: `${goal.color}20` }}></div>
+        <div className="absolute top-0 right-0 w-32 h-32 rounded-full blur-2xl pointer-events-none" style={{ backgroundColor: `${goal.color}20` }}></div>
         
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white">Add Contribution</h2>
@@ -470,6 +470,16 @@ const Goals = () => {
     setShowModal(true);
   };
 
+  const handleCloseModal = useCallback(() => {
+    setShowModal(false);
+    setEditingGoal(null);
+  }, []);
+
+  const handleCloseContributeModal = useCallback(() => {
+    setShowContributeModal(false);
+    setContributingGoal(null);
+  }, []);
+
   const handleDelete = async (goal) => {
     if (!confirm(`Delete goal "${goal.name}"?`)) return;
     
@@ -562,21 +572,25 @@ const Goals = () => {
         </motion.div>
       )}
 
-      <GoalModal
-        isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditingGoal(null); }}
-        onSubmit={handleSubmit}
-        editingGoal={editingGoal}
-        submitting={submitting}
-      />
+      <AnimatePresence>
+        <GoalModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          editingGoal={editingGoal}
+          submitting={submitting}
+        />
+      </AnimatePresence>
 
-      <ContributeModal
-        isOpen={showContributeModal}
-        onClose={() => { setShowContributeModal(false); setContributingGoal(null); }}
-        onSubmit={handleContribute}
-        goal={contributingGoal}
-        submitting={submitting}
-      />
+      <AnimatePresence>
+        <ContributeModal
+          isOpen={showContributeModal}
+          onClose={handleCloseContributeModal}
+          onSubmit={handleContribute}
+          goal={contributingGoal}
+          submitting={submitting}
+        />
+      </AnimatePresence>
     </motion.div>
   );
 };

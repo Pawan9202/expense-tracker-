@@ -73,6 +73,10 @@ const Upload = () => {
 
       if (result.success) {
         toast.success(result.message);
+        if (result.transaction || result.insertedTransactions > 0) {
+          window.dispatchEvent(new Event('transaction_updated'));
+          localStorage.setItem('dashboard_refresh_needed', 'true');
+        }
       } else {
         toast.error(result.error || 'Upload failed');
       }
@@ -314,8 +318,8 @@ const Upload = () => {
                       <div className="bg-white/5 p-3 rounded-lg border border-white/5">
                         <span className="text-gray-500 block text-xs uppercase tracking-wider mb-1">Amount</span>
                         <span className="text-white text-lg font-medium">
-                          {uploadResult.extractedData.amount
-                            ? `₹${uploadResult.extractedData.amount.toFixed(2)}`
+                          {uploadResult.extractedData.amount !== null && uploadResult.extractedData.amount !== undefined && Number(uploadResult.extractedData.amount) > 0
+                            ? `₹${Number(uploadResult.extractedData.amount).toFixed(2)}`
                             : 'Not detected'
                           }
                         </span>
@@ -339,7 +343,7 @@ const Upload = () => {
                             uploadResult.extractedData.confidence === 'medium' ? 'bg-amber-500/20 text-amber-400' :
                             'bg-rose-500/20 text-rose-400'
                           }`}>
-                          {uploadResult.extractedData.confidence}
+                          {uploadResult.extractedData.confidence || 'low'}
                         </span>
                       </div>
                       <div className="bg-white/5 p-3 rounded-lg border border-white/5 md:col-span-2">

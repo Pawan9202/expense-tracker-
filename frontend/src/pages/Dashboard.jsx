@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import React, { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -13,7 +13,8 @@ import {
   CreditCard,
   Target,
   PiggyBank,
-  AlertTriangle
+  AlertTriangle,
+  RefreshCw
 } from 'lucide-react';
 import { transactionService } from '../services/transactionService.js';
 import { analyticsService } from '../services/analyticsService.js';
@@ -28,10 +29,17 @@ const Dashboard = () => {
   const [loading, setLoading] = useState(true);
 
   useEffect(() => {
+    if (localStorage.getItem('dashboard_refresh_needed')) {
+      localStorage.removeItem('dashboard_refresh_needed');
+    }
     loadDashboardData();
+    
+    const handleRefresh = () => loadDashboardData();
+    window.addEventListener('transaction_updated', handleRefresh);
+    return () => window.removeEventListener('transaction_updated', handleRefresh);
   }, []);
 
-  const loadDashboardData = async () => {
+  const loadDashboardData = useCallback(async () => {
     try {
       setLoading(true);
 
@@ -46,7 +54,7 @@ const Dashboard = () => {
 
       const [summaryData, transactionsData, insightsData, budgetsData, goalsData] = await Promise.all([
         transactionService.getSummary(startDate, endDate),
-        transactionService.getTransactions({ limit: 5, sortBy: 'date', sortOrder: 'desc' }),
+        transactionService.getTransactions({ limit: 5, sortBy: 'createdAt', sortOrder: 'desc' }),
         analyticsService.getInsights(startDate, endDate),
         fetch('/api/budgets/progress', { headers }).then(r => r.json()).catch(() => ({ budgets: [] })),
         fetch('/api/goals', { headers }).then(r => r.json()).catch(() => ({ goals: [] }))
@@ -63,7 +71,7 @@ const Dashboard = () => {
     } finally {
       setLoading(false);
     }
-  };
+  }, []);
 
   const formatCurrency = (amount) => {
     return new Intl.NumberFormat('en-IN', {
@@ -116,6 +124,10 @@ const Dashboard = () => {
         </motion.div>
         
         <motion.div variants={itemVariants} className="flex space-x-3 w-full md:w-auto">
+          <button onClick={loadDashboardData} className="btn btn-secondary w-full md:w-auto" title="Refresh dashboard">
+            <RefreshCw size={18} className="mr-2" />
+            Refresh
+          </button>
           <Link to="/transactions/new" className="btn btn-primary w-full md:w-auto">
             <Plus size={18} className="mr-2" />
             Add Expense

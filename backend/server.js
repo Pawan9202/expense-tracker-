@@ -38,7 +38,7 @@ app.set('config', config);
 
 const allowedOrigins = process.env.CORS_ORIGIN 
   ? process.env.CORS_ORIGIN.split(',') 
-  : ['http://localhost:5173', 'http://localhost:3000'];
+  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'];
 
 app.use(cors({
   origin: function(origin, callback) {

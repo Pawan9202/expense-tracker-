@@ -5,7 +5,7 @@ import { useAuth } from './context/AuthContext.jsx';
 import { lazy, Suspense } from 'react';
 import Navbar from './components/Navbar.jsx';
 import QuickAddModal from './components/QuickAddModal.jsx';
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 
 const Dashboard = lazy(() => import('./pages/Dashboard.jsx'));
 const Transactions = lazy(() => import('./pages/Transactions.jsx'));
@@ -53,6 +53,10 @@ const ToastConfig = () => (
 function App() {
   const { user, loading } = useAuth();
   const [showQuickAdd, setShowQuickAdd] = useState(false);
+
+  const handleCloseQuickAdd = useCallback(() => {
+    setShowQuickAdd(false);
+  }, []);
 
   useEffect(() => {
     if (user?.id) {
@@ -129,7 +133,7 @@ function App() {
         </div>
       </main>
 
-      <QuickAddModal isOpen={showQuickAdd} onClose={() => setShowQuickAdd(false)} />
+      <QuickAddModal isOpen={showQuickAdd} onClose={handleCloseQuickAdd} />
       <ToastConfig />
     </div>
   );

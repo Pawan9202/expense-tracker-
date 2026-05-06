@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { X, ArrowUpRight, ArrowDownRight, Calendar, Tag, FileText, Zap } from 'lucide-react';
 import { transactionService } from '../services/transactionService.js';
@@ -23,7 +23,7 @@ const QuickAddModal = ({ isOpen, onClose }) => {
 
   const transactionType = watch('type');
 
-  const loadCategories = async () => {
+  const loadCategories = useCallback(async () => {
     if (categories.length > 0 || loadingCategories) return;
     setLoadingCategories(true);
     setCategoriesError(false);
@@ -36,7 +36,7 @@ const QuickAddModal = ({ isOpen, onClose }) => {
     } finally {
       setLoadingCategories(false);
     }
-  };
+  }, [categories.length, loadingCategories]);
 
   useEffect(() => {
     if (isOpen) {
@@ -46,6 +46,7 @@ const QuickAddModal = ({ isOpen, onClose }) => {
 
   useEffect(() => {
     reset({ ...watch(), category: '' });
+  // eslint-disable-next-line react-hooks/exhaustive-deps
   }, [transactionType, reset]);
 
   const onSubmit = async (data) => {

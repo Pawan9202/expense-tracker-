@@ -1,5 +1,5 @@
-import { useState, useEffect } from 'react';
-import { motion } from 'framer-motion';
+import { useState, useEffect, useCallback } from 'react';
+import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Repeat, X, Edit, Trash2, Calendar, ArrowUpRight, ArrowDownRight, Play, Pause, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
 
@@ -185,7 +185,7 @@ const RecurringModal = ({ isOpen, onClose, onSubmit, editingRecurring, categorie
         exit={{ scale: 0.9, y: 20 }}
         className="glass-panel w-full max-w-md p-6 relative"
       >
-        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl"></div>
+        <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
         
         <div className="flex justify-between items-center mb-6">
           <h2 className="text-xl font-bold text-white flex items-center">
@@ -406,6 +406,11 @@ const Recurring = () => {
     setShowModal(true);
   };
 
+  const handleCloseModal = useCallback(() => {
+    setShowModal(false);
+    setEditingRecurring(null);
+  }, []);
+
   const handleDelete = async (item) => {
     if (!confirm(`Delete this recurring ${item.description || item.category}?`)) return;
     
@@ -536,14 +541,16 @@ const Recurring = () => {
         </motion.div>
       )}
 
-      <RecurringModal
-        isOpen={showModal}
-        onClose={() => { setShowModal(false); setEditingRecurring(null); }}
-        onSubmit={handleSubmit}
-        editingRecurring={editingRecurring}
-        categories={categories}
-        submitting={submitting}
-      />
+      <AnimatePresence>
+        <RecurringModal
+          isOpen={showModal}
+          onClose={handleCloseModal}
+          onSubmit={handleSubmit}
+          editingRecurring={editingRecurring}
+          categories={categories}
+          submitting={submitting}
+        />
+      </AnimatePresence>
     </motion.div>
   );
 };

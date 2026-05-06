@@ -11,14 +11,13 @@ const handleUpload = async (endpoint, file, type) => {
       headers: {
         'Content-Type': 'multipart/form-data',
       },
+      timeout: 120000,
     });
-    // On success, return the server's data with a `success: true` flag.
     return { ...response.data, success: true };
   } catch (error) {
-    // On failure, return a clear error object with a `success: false` flag.
     return {
       success: false,
-      error: error.response?.data?.message || 'An unknown upload error occurred.'
+      error: error.response?.data?.message || error.response?.data?.error || 'An unknown upload error occurred.'
     };
   }
 };
