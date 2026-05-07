@@ -354,15 +354,19 @@ const Recurring = () => {
   const handleSubmit = async (data) => {
     setSubmitting(true);
     try {
-      const url = editingRecurring ? `/recurring/${editingRecurring.id}` : '/recurring';
-      const method = editingRecurring ? 'put' : 'post';
-      
-      await api[method](url, {
+      const payload = {
         ...data,
         amount: parseFloat(data.amount)
-      });
+      };
       
-      toast.success(editingRecurring ? 'Recurring updated' : 'Recurring created');
+      if (editingRecurring) {
+        await api.put(`/recurring/${editingRecurring.id}`, payload);
+        toast.success('Recurring updated');
+      } else {
+        await api.post('/recurring', payload);
+        toast.success('Recurring created');
+      }
+      
       setShowModal(false);
       setEditingRecurring(null);
       loadData();

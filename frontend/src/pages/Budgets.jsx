@@ -290,14 +290,14 @@ const Budgets = () => {
   const handleSubmit = async (data) => {
     setSubmitting(true);
     try {
-      const url = editingBudget 
-        ? `/budgets/${editingBudget.id}` 
-        : '/budgets';
-      const method = editingBudget ? 'put' : 'post';
+      if (editingBudget) {
+        await api.put(`/budgets/${editingBudget.id}`, data);
+        toast.success('Budget updated');
+      } else {
+        await api.post('/budgets', data);
+        toast.success('Budget created');
+      }
       
-      await api[method](url, data);
-      
-      toast.success(editingBudget ? 'Budget updated' : 'Budget created');
       setShowModal(false);
       setEditingBudget(null);
       loadData();

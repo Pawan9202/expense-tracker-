@@ -401,15 +401,19 @@ const Goals = () => {
   const handleSubmit = async (formData) => {
     setSubmitting(true);
     try {
-      const url = editingGoal ? `/goals/${editingGoal.id}` : '/goals';
-      const method = editingGoal ? 'put' : 'post';
-      
-      await api[method](url, {
+      const payload = {
         ...formData,
         targetAmount: parseFloat(formData.targetAmount)
-      });
+      };
       
-      toast.success(editingGoal ? 'Goal updated' : 'Goal created');
+      if (editingGoal) {
+        await api.put(`/goals/${editingGoal.id}`, payload);
+        toast.success('Goal updated');
+      } else {
+        await api.post('/goals', payload);
+        toast.success('Goal created');
+      }
+      
       setShowModal(false);
       setEditingGoal(null);
       loadGoals();
