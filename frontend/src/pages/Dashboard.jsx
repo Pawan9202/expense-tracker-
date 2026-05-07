@@ -18,6 +18,7 @@ import {
 } from 'lucide-react';
 import { transactionService } from '../services/transactionService.js';
 import { analyticsService } from '../services/analyticsService.js';
+import api from '../services/api';
 import toast from 'react-hot-toast';
 
 const Dashboard = () => {
@@ -56,8 +57,8 @@ const Dashboard = () => {
         transactionService.getSummary(startDate, endDate),
         transactionService.getTransactions({ limit: 5, sortBy: 'createdAt', sortOrder: 'desc' }),
         analyticsService.getInsights(startDate, endDate),
-        fetch('/api/budgets/progress', { headers }).then(r => r.json()).catch(() => ({ budgets: [] })),
-        fetch('/api/goals', { headers }).then(r => r.json()).catch(() => ({ goals: [] }))
+        api.get('/budgets/progress').then(r => r.data).catch(() => ({ budgets: [] })),
+        api.get('/goals').then(r => r.data).catch(() => ({ goals: [] }))
       ]);
 
       setSummary(summaryData);

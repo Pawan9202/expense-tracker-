@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Repeat, X, Edit, Trash2, Calendar, ArrowUpRight, ArrowDownRight, Play, Pause, Zap } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -183,7 +184,7 @@ const RecurringModal = ({ isOpen, onClose, onSubmit, editingRecurring, categorie
         initial={{ scale: 0.9, y: 20 }}
         animate={{ scale: 1, y: 0 }}
         exit={{ scale: 0.9, y: 20 }}
-        className="glass-panel w-full max-w-md p-6 relative"
+        className="glass-panel w-full max-w-sm p-4 relative"
       >
         <div className="absolute top-0 right-0 w-32 h-32 bg-indigo-500/10 rounded-full blur-2xl pointer-events-none"></div>
         
@@ -329,12 +330,12 @@ const Recurring = () => {
     setLoading(true);
     try {
       const [recurringRes, categoriesRes] = await Promise.all([
-        fetch('/api/recurring', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
-        fetch('/api/transactions/categories', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        api.get('/recurring'),
+        api.get('/transactions/categories')
       ]);
       
-      const recurringData = await recurringRes.json();
-      const categoriesData = await categoriesRes.json();
+      const recurringData = recurringRes.data;
+      const categoriesData = categoriesRes.data;
       
       setRecurring(recurringData.recurring || []);
       setCategories(categoriesData.categories || []);
@@ -353,22 +354,13 @@ const Recurring = () => {
   const handleSubmit = async (data) => {
     setSubmitting(true);
     try {
-      const url = editingRecurring ? `/api/recurring/${editingRecurring.id}` : '/api/recurring';
-      const method = editingRecurring ? 'PUT' : 'POST';
+      const url = editingRecurring ? `/recurring/${editingRecurring.id}` : '/recurring';
+      const method = editingRecurring ? 'put' : 'post';
       
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          ...data,
-          amount: parseFloat(data.amount)
-        })
+      await api[method](url, {
+        ...data,
+        amount: parseFloat(data.amount)
       });
-      
-      if (!res.ok) throw new Error('Failed to save');
       
       toast.success(editingRecurring ? 'Recurring updated' : 'Recurring created');
       setShowModal(false);
@@ -383,16 +375,7 @@ const Recurring = () => {
 
   const handleToggle = async (item) => {
     try {
-      const res = await fetch(`/api/recurring/${item.id}`, {
-        method: 'PUT',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ isActive: !item.isActive })
-      });
-      
-      if (!res.ok) throw new Error('Failed to update');
+      await api.put(`/recurring/${item.id}`, { isActive: !item.isActive });
       
       toast.success(item.isActive ? 'Recurring paused' : 'Recurring resumed');
       loadData();
@@ -415,12 +398,7 @@ const Recurring = () => {
     if (!confirm(`Delete this recurring ${item.description || item.category}?`)) return;
     
     try {
-      const res = await fetch(`/api/recurring/${item.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      if (!res.ok) throw new Error('Failed to delete');
+      await api.delete(`/recurring/${item.id}`);
       
       toast.success('Recurring deleted');
       loadData();
@@ -431,15 +409,9 @@ const Recurring = () => {
 
   const handleProcess = async () => {
     try {
-      const res = await fetch('/api/recurring/process', {
-        method: 'POST',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
+      const res = await api.post('/recurring/process');
       
-      if (!res.ok) throw new Error('Failed to process');
-      
-      const data = await res.json();
-      toast.success(data.message);
+      toast.success(res.data.message);
       loadData();
     } catch (error) {
       toast.error(error.message);

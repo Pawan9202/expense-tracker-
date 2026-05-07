@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Target, TrendingDown, AlertTriangle, X, Edit, Trash2 } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -263,16 +264,12 @@ const Budgets = () => {
     setLoading(true);
     try {
       const [budgetsRes, categoriesRes] = await Promise.all([
-        fetch('/api/budgets/progress', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } }),
-        fetch('/api/transactions/categories', { headers: { Authorization: `Bearer ${localStorage.getItem('token')}` } })
+        api.get('/budgets/progress'),
+        api.get('/transactions/categories')
       ]);
       
-      if (!budgetsRes.ok || !categoriesRes.ok) {
-        throw new Error('Failed to load data');
-      }
-      
-      const budgetsData = await budgetsRes.json();
-      const categoriesData = await categoriesRes.json();
+      const budgetsData = budgetsRes.data || { budgets: [] };
+      const categoriesData = categoriesRes.data || { categories: [] };
       
       setBudgets(Array.isArray(budgetsData.budgets) ? budgetsData.budgets : []);
       setCategories(Array.isArray(categoriesData.categories) ? categoriesData.categories : []);
@@ -294,20 +291,11 @@ const Budgets = () => {
     setSubmitting(true);
     try {
       const url = editingBudget 
-        ? `/api/budgets/${editingBudget.id}` 
-        : '/api/budgets';
-      const method = editingBudget ? 'PUT' : 'POST';
+        ? `/budgets/${editingBudget.id}` 
+        : '/budgets';
+      const method = editingBudget ? 'put' : 'post';
       
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify(data)
-      });
-      
-      if (!res.ok) throw new Error('Failed to save budget');
+      await api[method](url, data);
       
       toast.success(editingBudget ? 'Budget updated' : 'Budget created');
       setShowModal(false);
@@ -334,12 +322,7 @@ const Budgets = () => {
     if (!confirm(`Delete budget for ${budget.category}?`)) return;
     
     try {
-      const res = await fetch(`/api/budgets/${budget.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      if (!res.ok) throw new Error('Failed to delete');
+      await api.delete(`/budgets/${budget.id}`);
       
       toast.success('Budget deleted');
       loadData();

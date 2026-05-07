@@ -2,6 +2,7 @@ import { useState, useEffect, useCallback } from 'react';
 import { motion, AnimatePresence } from 'framer-motion';
 import { Plus, Target, X, Edit, Trash2, Clock, CheckCircle, TrendingUp, DollarSign } from 'lucide-react';
 import toast from 'react-hot-toast';
+import api from '../services/api';
 
 const containerVariants = {
   hidden: { opacity: 0 },
@@ -382,16 +383,8 @@ const Goals = () => {
   const loadGoals = async () => {
     setLoading(true);
     try {
-      const res = await fetch('/api/goals', {
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      if (!res.ok) {
-        throw new Error('Failed to load goals');
-      }
-      
-      const data = await res.json();
-      setGoals(Array.isArray(data.goals) ? data.goals : []);
+      const res = await api.get('/goals');
+      setGoals(Array.isArray(res.data.goals) ? res.data.goals : []);
     } catch (error) {
       console.error('Error loading goals:', error);
       setGoals([]);
@@ -408,22 +401,13 @@ const Goals = () => {
   const handleSubmit = async (formData) => {
     setSubmitting(true);
     try {
-      const url = editingGoal ? `/api/goals/${editingGoal.id}` : '/api/goals';
-      const method = editingGoal ? 'PUT' : 'POST';
+      const url = editingGoal ? `/goals/${editingGoal.id}` : '/goals';
+      const method = editingGoal ? 'put' : 'post';
       
-      const res = await fetch(url, {
-        method,
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({
-          ...formData,
-          targetAmount: parseFloat(formData.targetAmount)
-        })
+      await api[method](url, {
+        ...formData,
+        targetAmount: parseFloat(formData.targetAmount)
       });
-      
-      if (!res.ok) throw new Error('Failed to save goal');
       
       toast.success(editingGoal ? 'Goal updated' : 'Goal created');
       setShowModal(false);
@@ -439,20 +423,10 @@ const Goals = () => {
   const handleContribute = async (amount) => {
     setSubmitting(true);
     try {
-      const res = await fetch(`/api/goals/${contributingGoal.id}/contribute`, {
-        method: 'POST',
-        headers: {
-          'Content-Type': 'application/json',
-          Authorization: `Bearer ${localStorage.getItem('token')}`
-        },
-        body: JSON.stringify({ amount })
-      });
+      const res = await api.post(`/goals/${contributingGoal.id}/contribute`, { amount });
       
-      if (!res.ok) throw new Error('Failed to add contribution');
-      
-      const data = await res.json();
       toast.success('Contribution added!');
-      if (data.goal.isCompleted) {
+      if (res.data.goal.isCompleted) {
         toast.success('Congratulations! Goal completed!');
       }
       setShowContributeModal(false);
@@ -484,12 +458,7 @@ const Goals = () => {
     if (!confirm(`Delete goal "${goal.name}"?`)) return;
     
     try {
-      const res = await fetch(`/api/goals/${goal.id}`, {
-        method: 'DELETE',
-        headers: { Authorization: `Bearer ${localStorage.getItem('token')}` }
-      });
-      
-      if (!res.ok) throw new Error('Failed to delete');
+      await api.delete(`/goals/${goal.id}`);
       
       toast.success('Goal deleted');
       loadGoals();
