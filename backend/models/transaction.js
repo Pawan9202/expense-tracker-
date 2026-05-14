@@ -1,3 +1,4 @@
+const crypto = require('crypto');
 const mongoose = require('mongoose');
 
 const transactionSchema = new mongoose.Schema({
@@ -39,6 +40,10 @@ const transactionSchema = new mongoose.Schema({
     type: String,
     trim: true
   },
+  fileHash: {
+    type: String,
+    trim: true
+  },
 }, {
   timestamps: true,
   toJSON: {
@@ -57,6 +62,46 @@ const transactionSchema = new mongoose.Schema({
 transactionSchema.virtual('id').get(function() {
   return this._id.toHexString();
 });
+
+transactionSchema.index(
+  { userId: 1, amount: 1, date: 1, description: 1, category: 1 },
+  { unique: true }
+);
+
+transactionSchema.index(
+  { userId: 1, fileHash: 1 },
+  { unique: true, sparse: true }
+);
+
+transactionSchema.pre('save', function(next) {
+  if (this.date) {
+    const d = new Date(this.date);
+    this.date = new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+  }
+  next();
+});
+
+transactionSchema.statics.normalizeDate = function(date) {
+  const d = new Date(date);
+  return new Date(Date.UTC(d.getFullYear(), d.getMonth(), d.getDate()));
+};
+
+transactionSchema.statics.computeFileHash = function(fileBuffer) {
+  return crypto.createHash('sha256').update(fileBuffer).digest('hex');
+};
+
+transactionSchema.statics.checkDuplicate = async function(userId, data) {
+  const { amount, date, description, category } = data;
+  const normalizedDate = this.normalizeDate(date);
+
+  return this.findOne({
+    userId,
+    amount,
+    date: normalizedDate,
+    description: description || '',
+    category
+  });
+};
 
 transactionSchema.statics.findByUser = async function(userId, filters = {}) {
   const {

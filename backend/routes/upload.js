@@ -109,6 +109,19 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
       throw new Error("AI Receipt Parser service is not available.");
     }
 
+    const fileBuffer = fs.readFileSync(filePath);
+    const fileHash = Transaction.computeFileHash(fileBuffer);
+
+    const existingFile = await Transaction.findOne({ userId: req.user._id, fileHash });
+    if (existingFile) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(409).json({
+        success: false,
+        error: 'Duplicate receipt',
+        message: 'This receipt image has already been uploaded.'
+      });
+    }
+
     const result = await AIReceiptParserService.parseWithAI(filePath);
 
     const { totalAmount, transactionDate, description } = result.data;
@@ -132,6 +145,22 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
       return res.json(responseData);
     }
 
+    const existingDuplicate = await Transaction.checkDuplicate(req.user._id, {
+      amount: totalAmount,
+      date: transactionDate || new Date(),
+      description: description || 'Transaction from receipt',
+      category: matchedCategory
+    });
+
+    if (existingDuplicate) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(409).json({
+        success: false,
+        error: 'Duplicate transaction',
+        message: 'A transaction with the same amount, date, description, and category already exists.'
+      });
+    }
+
     const transaction = new Transaction({
       userId: req.user._id,
       amount: totalAmount,
@@ -139,7 +168,8 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
       category: matchedCategory,
       description: description || 'Transaction from receipt',
       date: transactionDate ? new Date(transactionDate) : new Date(),
-      receiptUrl: `/uploads/${req.file.filename}`
+      receiptUrl: `/uploads/${req.file.filename}`,
+      fileHash
     });
 
     await transaction.save();
@@ -150,6 +180,14 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
     res.json(responseData);
 
   } catch (error) {
+    if (error.code === 11000) {
+      if (fs.existsSync(filePath)) fs.unlinkSync(filePath);
+      return res.status(409).json({
+        success: false,
+        error: 'Duplicate transaction',
+        message: 'This transaction already exists in your records.'
+      });
+    }
     console.error('AI Receipt processing error:', error);
     res.status(500).json({
       success: false,
@@ -182,10 +220,25 @@ router.post('/statement', uploadStatement.single('file'), async (req, res) => {
     const transactionsToInsert = await AIStatementParserService.parseWithAI(rawText, req.user._id);
     
     let insertedCount = 0;
+    let duplicateCount = 0;
+    const nonDuplicateTransactions = [];
+
     if (transactionsToInsert.length > 0) {
-      // Step 3: Insert the clean, structured data into the database.
-      const result = await Transaction.insertMany(transactionsToInsert, { ordered: false });
-      insertedCount = result.length;
+      // Step 3: Filter out duplicates based on amount, date, description, and category.
+      for (const tx of transactionsToInsert) {
+        const existing = await Transaction.checkDuplicate(req.user._id, tx);
+        if (existing) {
+          duplicateCount++;
+        } else {
+          nonDuplicateTransactions.push(tx);
+        }
+      }
+
+      // Step 4: Insert only the non-duplicate transactions.
+      if (nonDuplicateTransactions.length > 0) {
+        const result = await Transaction.insertMany(nonDuplicateTransactions, { ordered: false });
+        insertedCount = result.length;
+      }
     }
 
     res.json({
@@ -193,6 +246,7 @@ router.post('/statement', uploadStatement.single('file'), async (req, res) => {
       totalTransactions: transactionsToInsert.length,
       insertedTransactions: insertedCount,
       skippedTransactions: transactionsToInsert.length - insertedCount,
+      duplicateCount,
       transactions: transactionsToInsert.slice(0, 10), // Return a preview for the UI
     });
 

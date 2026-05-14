@@ -76,9 +76,21 @@ router.post('/bulk', async (req, res) => {
     }
 
     const validTransactions = [];
+    let duplicateCount = 0;
     for (const transaction of transactions) {
       const { amount, type, category, description, date } = transaction;
-      if (!amount || !type || !category || !date) continue; // Skip malformed
+      if (!amount || !type || !category || !date) continue;
+
+      const existing = await Transaction.checkDuplicate(req.user._id, {
+        amount: parseFloat(amount),
+        date: new Date(date),
+        description: description || '',
+        category
+      });
+      if (existing) {
+        duplicateCount++;
+        continue;
+      }
 
       const categoryExists = await Category.findOne({
         name: category,
@@ -111,7 +123,8 @@ router.post('/bulk', async (req, res) => {
 
     res.status(201).json({
       message: 'Bulk transactions created successfully',
-      insertedCount: result.length
+      insertedCount: result.length,
+      duplicateCount
     });
   } catch (error) {
     console.error('Bulk insert error:', error);
@@ -171,6 +184,19 @@ router.post('/', validateTransaction, async (req, res) => {
   try {
     const { amount, type, category, description, date, receiptUrl } = req.body;
 
+    const existing = await Transaction.checkDuplicate(req.user._id, {
+      amount: parseFloat(amount),
+      date: new Date(date),
+      description: description || '',
+      category
+    });
+    if (existing) {
+      return res.status(409).json({
+        error: 'Duplicate transaction',
+        message: 'A transaction with the same amount, date, description, and category already exists.'
+      });
+    }
+
     const categoryExists = await Category.findOne({
       name: category,
       type,
@@ -202,6 +228,12 @@ router.post('/', validateTransaction, async (req, res) => {
       transaction
     });
   } catch (error) {
+    if (error.code === 11000) {
+      return res.status(409).json({
+        error: 'Duplicate transaction',
+        message: 'This transaction already exists in your records.'
+      });
+    }
     console.error('Create transaction error:', error);
     res.status(500).json({
       error: 'Failed to create transaction',

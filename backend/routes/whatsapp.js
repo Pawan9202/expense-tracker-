@@ -128,18 +128,29 @@ router.post('/webhook', async (req, res) => {
     }
     
     if (transactionData) {
-      const transaction = new Transaction({
-        userId: user._id,
-        ...transactionData
+      const existing = await Transaction.checkDuplicate(user._id, {
+        amount: transactionData.amount,
+        date: transactionData.date || new Date(),
+        description: transactionData.description || '',
+        category: transactionData.category
       });
-      await transaction.save();
-      
-      // Emit to frontend
-      if (io) {
-        io.to(user._id.toString()).emit('transaction_added', transaction); // Using user ID as room
+
+      if (existing) {
+        twiml.message(`⚠️ Duplicate transaction skipped. A transaction with the same amount, date, description, and category already exists.`);
+      } else {
+        const transaction = new Transaction({
+          userId: user._id,
+          ...transactionData
+        });
+        await transaction.save();
+        
+        // Emit to frontend
+        if (io) {
+          io.to(user._id.toString()).emit('transaction_added', transaction);
+        }
+        
+        twiml.message(`✅ Saved ${transaction.type === 'expense' ? 'Expense' : 'Income'}: $${transaction.amount} for ${transaction.description}.`);
       }
-      
-      twiml.message(`✅ Saved ${transaction.type === 'expense' ? 'Expense' : 'Income'}: $${transaction.amount} for ${transaction.description}.`);
     } else {
       twiml.message(`I couldn't understand that transaction. Please send a clear description like "Lunch for $15" or send a receipt image.`);
     }
