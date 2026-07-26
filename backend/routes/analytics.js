@@ -2,6 +2,7 @@ const express = require('express');
 const Transaction = require('../models/transaction');
 const { authenticateToken } = require('../middleware/auth');
 const { validateAnalyticsQuery, validateDateRange } = require('../middleware/validation');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -13,7 +14,7 @@ router.get('/summary', validateDateRange, async (req, res) => {
     const summaryData = await Transaction.getSummary(req.user._id, { startDate, endDate });
     res.json({ summary: summaryData });
   } catch (error) {
-    console.error('Get analytics summary error:', error);
+    logger.error('Get analytics summary error:', error);
     res.status(500).json({ error: 'Failed to get summary' });
   }
 });
@@ -34,7 +35,7 @@ router.get('/categories', validateAnalyticsQuery, validateDateRange, async (req,
 
     res.json({ categories: result });
   } catch (error) {
-    console.error('Get category analytics error:', error);
+    logger.error('Get category analytics error:', error);
     res.status(500).json({ error: 'Failed to get category analytics' });
   }
 });
@@ -48,7 +49,7 @@ router.get('/timeline', validateAnalyticsQuery, validateDateRange, async (req, r
     res.json({ timeline: timelineData });
     
   } catch (error) {
-    console.error('Get timeline analytics error:', error);
+    logger.error('Get timeline analytics error:', error);
     res.status(500).json({ error: 'Failed to get timeline data' });
   }
 });
@@ -108,7 +109,7 @@ router.get('/trends', validateDateRange, async (req, res) => {
 
     res.json({ trends, topExpenseCategories, topIncomeCategories });
   } catch (error) {
-    console.error('Get trends analytics error:', error);
+    logger.error('Get trends analytics error:', error);
     res.status(500).json({ error: 'Failed to get trends analytics' });
   }
 });
@@ -127,13 +128,13 @@ router.get('/insights', validateDateRange, async (req, res) => {
       insights.push({
         type: 'warning',
         title: 'Expenses Exceed Income',
-        message: `You spent ₹${Math.abs(summary.net).toFixed(2)} more than you earned. Review spending to improve your balance.`,
+        message: `You spent $${Math.abs(summary.net).toFixed(2)} more than you earned. Review spending to improve your balance.`,
       });
     } else {
        insights.push({
         type: 'positive',
         title: 'Positive Net Income',
-        message: `Great job! You saved ₹${summary.net.toFixed(2)} this period.`,
+        message: `Great job! You saved $${summary.net.toFixed(2)} this period.`,
       });
     }
 
@@ -164,7 +165,7 @@ router.get('/insights', validateDateRange, async (req, res) => {
 
     res.json({ insights });
   } catch (error) {
-    console.error('Get insights error:', error);
+    logger.error('Get insights error:', error);
     res.status(500).json({ error: 'Failed to get insights' });
   }
 });
@@ -192,7 +193,7 @@ router.get('/export', validateDateRange, async (req, res) => {
       res.json(exportData);
     }
   } catch (error) {
-    console.error('Export analytics error:', error);
+    logger.error('Export analytics error:', error);
     res.status(500).json({ error: 'Failed to export analytics' });
   }
 });

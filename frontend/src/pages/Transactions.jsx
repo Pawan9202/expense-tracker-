@@ -57,7 +57,6 @@ const Transactions = ({ isNew = false }) => {
 
     } catch (error) {
       toast.error("Failed to load data.");
-      console.error("Load data error:", error);
     } finally {
       setLoading(false);
     }
@@ -88,7 +87,6 @@ const Transactions = ({ isNew = false }) => {
       loadData(pagination.page);
 
     } catch (error) {
-      console.error('Error saving transaction:', error);
       toast.error(error.response?.data?.message || 'Failed to save transaction');
     } finally {
       setSubmitting(false);

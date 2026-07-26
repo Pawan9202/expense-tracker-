@@ -10,6 +10,7 @@ const {
   validateDateRange
 } = require('../middleware/validation');
 const { checkBudgetOnTransaction } = require('../services/alertService');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -24,7 +25,7 @@ router.get('/summary', validateDateRange, async (req, res) => {
     const summary = await Transaction.getSummary(req.user._id, filters);
     res.json(summary);
   } catch (error) {
-    console.error('Get summary error:', error);
+    logger.error('Get summary error:', error);
     res.status(500).json({
       error: 'Failed to get summary',
       message: 'An error occurred while retrieving the summary'
@@ -55,7 +56,7 @@ router.get('/categories', async (req, res) => {
 
     res.json({ categories: categoriesWithCounts });
   } catch (error) {
-    console.error('Get categories error:', error);
+    logger.error('Get categories error:', error);
     res.status(500).json({
       error: 'Failed to get categories',
       message: 'An error occurred while retrieving categories'
@@ -127,7 +128,7 @@ router.post('/bulk', async (req, res) => {
       duplicateCount
     });
   } catch (error) {
-    console.error('Bulk insert error:', error);
+    logger.error('Bulk insert error:', error);
     res.status(500).json({
       error: 'Failed to create bulk transactions',
       message: 'An error occurred during bulk insertion'
@@ -147,7 +148,7 @@ router.get('/', validateTransactionQuery, validateDateRange, async (req, res) =>
     const result = await Transaction.findByUser(req.user._id, req.query);
     res.json(result);
   } catch (error) {
-    console.error('Get transactions error:', error);
+    logger.error('Get transactions error:', error);
     res.status(500).json({
       error: 'Failed to get transactions',
       message: 'An error occurred while retrieving your transactions'
@@ -171,7 +172,7 @@ router.get('/:id', validateTransactionId, async (req, res) => {
     }
     res.json({ transaction });
   } catch (error) {
-    console.error('Get transaction error:', error);
+    logger.error('Get transaction error:', error);
     res.status(500).json({
       error: 'Failed to get transaction',
       message: 'An error occurred while retrieving the transaction'
@@ -234,7 +235,7 @@ router.post('/', validateTransaction, async (req, res) => {
         message: 'This transaction already exists in your records.'
       });
     }
-    console.error('Create transaction error:', error);
+    logger.error('Create transaction error:', error);
     res.status(500).json({
       error: 'Failed to create transaction',
       message: 'An error occurred while creating the transaction'
@@ -267,7 +268,7 @@ router.put('/:id', validateTransactionId, validateTransactionUpdate, async (req,
       transaction: updatedTransaction
     });
   } catch (error) {
-    console.error('Update transaction error:', error);
+    logger.error('Update transaction error:', error);
     res.status(500).json({
       error: 'Failed to update transaction',
       message: 'An error occurred while updating the transaction'
@@ -288,7 +289,7 @@ router.delete('/:id', validateTransactionId, async (req, res) => {
     }
     res.json({ message: 'Transaction deleted successfully' });
   } catch (error) {
-    console.error('Delete transaction error:', error);
+    logger.error('Delete transaction error:', error);
     res.status(500).json({
       error: 'Failed to delete transaction',
       message: 'An error occurred while deleting the transaction'

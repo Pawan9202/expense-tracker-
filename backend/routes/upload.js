@@ -9,6 +9,7 @@ const PDFService = require('../services/pdfService'); // Kept for initial text e
 const AIStatementParserService = require('../services/aiStatementParser');
 const AIReceiptParserService = require('../services/aiReceiptParser');
 const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -92,7 +93,7 @@ const getMatchedCategory = async (description) => {
 
     return categoryNames.find(name => name.includes('Other')) || 'Other Expenses';
   } catch (error) {
-    console.error('Category matching error:', error);
+    logger.error('Category matching error:', error);
     return 'Other Expenses';
   }
 };
@@ -105,7 +106,7 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
 
   try {
     if (typeof AIReceiptParserService.parseWithAI !== 'function') {
-      console.error("CRITICAL ERROR: AIReceiptParserService.parseWithAI is not a function.");
+      logger.error("CRITICAL ERROR: AIReceiptParserService.parseWithAI is not a function.");
       throw new Error("AI Receipt Parser service is not available.");
     }
 
@@ -188,7 +189,7 @@ router.post('/receipt', uploadReceipt.single('file'), async (req, res) => {
         message: 'This transaction already exists in your records.'
       });
     }
-    console.error('AI Receipt processing error:', error);
+    logger.error('AI Receipt processing error:', error);
     res.status(500).json({
       success: false,
       error: 'Receipt processing failed',
@@ -206,7 +207,7 @@ router.post('/statement', uploadStatement.single('file'), async (req, res) => {
   try {
     // FIX: Add a similar check for the statement parser for robustness.
     if (typeof AIStatementParserService.parseWithAI !== 'function') {
-      console.error("CRITICAL ERROR: AIStatementParserService.parseWithAI is not a function. This is likely caused by an error during the service's initialization (e.g., missing GEMINI_API_KEY in .env).");
+      logger.error("CRITICAL ERROR: AIStatementParserService.parseWithAI is not a function. This is likely caused by an error during the service's initialization (e.g., missing GEMINI_API_KEY in .env).");
       throw new Error("AI Statement Parser service is not available. Please check the server logs for more details.");
     }
 
@@ -251,7 +252,7 @@ router.post('/statement', uploadStatement.single('file'), async (req, res) => {
     });
 
   } catch (error) {
-    console.error('AI Statement processing error:', error);
+    logger.error('AI Statement processing error:', error);
     res.status(500).json({
       error: 'Statement processing failed',
       message: error.message || 'An unexpected error occurred.',

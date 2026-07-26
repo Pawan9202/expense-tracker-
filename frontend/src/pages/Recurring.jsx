@@ -340,7 +340,6 @@ const Recurring = () => {
       setRecurring(recurringData.recurring || []);
       setCategories(categoriesData.categories || []);
     } catch (error) {
-      console.error('Error loading data:', error);
       toast.error('Failed to load recurring transactions');
     } finally {
       setLoading(false);

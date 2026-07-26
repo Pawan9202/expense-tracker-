@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Goal = require('../models/goal');
 const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 router.use(authenticateToken);
 
@@ -10,7 +11,7 @@ router.get('/', async (req, res) => {
     const goals = await Goal.getAllGoals(req.user._id);
     res.json({ goals });
   } catch (error) {
-    console.error('Get goals error:', error);
+    logger.error('Get goals error:', error);
     res.status(500).json({ error: 'Failed to fetch goals' });
   }
 });
@@ -28,7 +29,7 @@ router.get('/:id', async (req, res) => {
     
     res.json({ goal });
   } catch (error) {
-    console.error('Get goal error:', error);
+    logger.error('Get goal error:', error);
     res.status(500).json({ error: 'Failed to fetch goal' });
   }
 });
@@ -55,7 +56,7 @@ router.post('/', async (req, res) => {
     await goal.save();
     res.status(201).json({ goal });
   } catch (error) {
-    console.error('Create goal error:', error);
+    logger.error('Create goal error:', error);
     res.status(500).json({ error: 'Failed to create goal' });
   }
 });
@@ -84,7 +85,7 @@ router.put('/:id', async (req, res) => {
     await goal.save();
     res.json({ goal });
   } catch (error) {
-    console.error('Update goal error:', error);
+    logger.error('Update goal error:', error);
     res.status(500).json({ error: 'Failed to update goal' });
   }
 });
@@ -106,7 +107,7 @@ router.post('/:id/contribute', async (req, res) => {
     
     res.json({ goal, message: 'Contribution added successfully' });
   } catch (error) {
-    console.error('Add contribution error:', error);
+    logger.error('Add contribution error:', error);
     res.status(500).json({ error: error.message || 'Failed to add contribution' });
   }
 });
@@ -124,7 +125,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ message: 'Goal deleted successfully' });
   } catch (error) {
-    console.error('Delete goal error:', error);
+    logger.error('Delete goal error:', error);
     res.status(500).json({ error: 'Failed to delete goal' });
   }
 });

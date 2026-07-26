@@ -67,7 +67,6 @@ const Dashboard = () => {
       setBudgets(budgetsData.budgets?.slice(0, 3) || []);
       setGoals(goalsData.goals?.slice(0, 2) || []);
     } catch (error) {
-      console.error('Error loading dashboard data:', error);
       toast.error('Failed to load dashboard data.');
     } finally {
       setLoading(false);
@@ -75,9 +74,9 @@ const Dashboard = () => {
   }, []);
 
   const formatCurrency = (amount) => {
-    return new Intl.NumberFormat('en-IN', {
+    return new Intl.NumberFormat('en-US', {
       style: 'currency',
-      currency: 'INR',
+      currency: 'USD',
     }).format(amount || 0);
   };
 
@@ -304,8 +303,8 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>₹{(budget.spent || 0).toLocaleString()}</span>
-                  <span>₹{(budget.amount || 0).toLocaleString()}</span>
+                  <span>${(budget.spent || 0).toLocaleString()}</span>
+                  <span>${(budget.amount || 0).toLocaleString()}</span>
                 </div>
                 {budget.alertTriggered && !budget.isOverBudget && (
                   <div className="flex items-center mt-2 text-xs text-amber-400">
@@ -345,8 +344,8 @@ const Dashboard = () => {
                   />
                 </div>
                 <div className="flex justify-between text-xs text-gray-500">
-                  <span>₹{(goal.currentAmount || 0).toLocaleString()}</span>
-                  <span>₹{(goal.targetAmount || 0).toLocaleString()}</span>
+                  <span>${(goal.currentAmount || 0).toLocaleString()}</span>
+                  <span>${(goal.targetAmount || 0).toLocaleString()}</span>
                 </div>
                 <p className="text-xs text-gray-500 mt-2">
                   {goal.daysRemaining || 0} days remaining

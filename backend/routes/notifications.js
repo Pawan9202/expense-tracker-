@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Notification = require('../models/notification');
 const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 router.use(authenticateToken);
 
@@ -36,7 +37,7 @@ router.get('/', async (req, res) => {
       unreadCount
     });
   } catch (error) {
-    console.error('Get notifications error:', error);
+    logger.error('Get notifications error:', error);
     res.status(500).json({ error: 'Failed to fetch notifications' });
   }
 });
@@ -55,7 +56,7 @@ router.put('/:id/read', async (req, res) => {
     
     res.json({ notification });
   } catch (error) {
-    console.error('Mark read error:', error);
+    logger.error('Mark read error:', error);
     res.status(500).json({ error: 'Failed to mark notification as read' });
   }
 });
@@ -69,7 +70,7 @@ router.put('/read-all', async (req, res) => {
     
     res.json({ message: 'All notifications marked as read' });
   } catch (error) {
-    console.error('Mark all read error:', error);
+    logger.error('Mark all read error:', error);
     res.status(500).json({ error: 'Failed to mark all as read' });
   }
 });
@@ -87,7 +88,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ message: 'Notification deleted' });
   } catch (error) {
-    console.error('Delete notification error:', error);
+    logger.error('Delete notification error:', error);
     res.status(500).json({ error: 'Failed to delete notification' });
   }
 });
@@ -100,7 +101,7 @@ router.get('/unread-count', async (req, res) => {
     });
     res.json({ count });
   } catch (error) {
-    console.error('Get unread count error:', error);
+    logger.error('Get unread count error:', error);
     res.status(500).json({ error: 'Failed to get unread count' });
   }
 });

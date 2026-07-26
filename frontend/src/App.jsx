@@ -60,21 +60,21 @@ function App() {
 
   useEffect(() => {
     if (user?.id) {
-      // Assuming Vite API URL env or fallback to localhost:5000
-      const socket = io(import.meta.env.VITE_API_URL || 'http://localhost:5000');
-      
+      const socketUrl = import.meta.env.VITE_API_URL || window.location.origin;
+      const token = localStorage.getItem('token');
+      const socket = io(socketUrl, { auth: { token } });
+
       socket.emit('join_user_room', user.id);
-      
+
       socket.on('transaction_added', (transaction) => {
         toast.success(`WhatsApp Bot: Added ${transaction.type === 'expense' ? 'Expense' : 'Income'} - ${transaction.description}`, {
           icon: '🤖',
           duration: 5000,
         });
-        
-        // Dispatch custom event so pages like Dashboard/Transactions can refetch if they are listening
+
         window.dispatchEvent(new Event('transaction_updated'));
       });
-      
+
       return () => {
         socket.disconnect();
       };
@@ -113,7 +113,7 @@ function App() {
   return (
     <div className="flex h-screen bg-[#020617] text-white overflow-hidden font-sans">
       <Navbar onQuickAdd={() => setShowQuickAdd(true)} />
-      
+
       <main className="flex-1 overflow-auto bg-gradient-to-br from-[#0f172a] to-[#020617] relative">
         <div className="container mx-auto px-4 py-8 lg:px-8 max-w-7xl">
           <Suspense fallback={<PageLoader />}>
@@ -139,4 +139,4 @@ function App() {
   );
 }
 
-export default App; 
+export default App;

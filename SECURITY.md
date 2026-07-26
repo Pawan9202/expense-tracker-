@@ -1,21 +1,15 @@
 # Security Policy
 
-## Supported Versions
-
-Use this section to tell people about which versions of your project are
-currently being supported with security updates.
-
-| Version | Supported          |
-| ------- | ------------------ |
-| 5.1.x   | :white_check_mark: |
-| 5.0.x   | :x:                |
-| 4.0.x   | :white_check_mark: |
-| < 4.0   | :x:                |
-
 ## Reporting a Vulnerability
 
-Use this section to tell people how to report a vulnerability.
+If you discover a security vulnerability in this project, please report it responsibly by opening an issue on GitHub or contacting the maintainers directly. Do not disclose security vulnerabilities publicly.
 
-Tell them where to go, how often they can expect to get an update on a
-reported vulnerability, what to expect if the vulnerability is accepted or
-declined, etc.
+We will respond to reported vulnerabilities within 48 hours and provide an estimated timeline for a fix.
+
+## Security Best Practices
+
+- Never commit `.env` files or credentials to the repository
+- Use strong, unique JWT secrets for production deployments
+- Keep dependencies up to date
+- Use HTTPS in production
+- Enable rate limiting on authentication endpoints

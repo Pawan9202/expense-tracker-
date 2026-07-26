@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const Budget = require('../models/budget');
 const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 router.use(authenticateToken);
 
@@ -11,7 +12,7 @@ router.get('/', async (req, res) => {
       .sort({ category: 1 });
     res.json({ budgets });
   } catch (error) {
-    console.error('Get budgets error:', error);
+    logger.error('Get budgets error:', error);
     res.status(500).json({ error: 'Failed to fetch budgets' });
   }
 });
@@ -26,7 +27,7 @@ router.get('/progress', async (req, res) => {
     });
     res.json({ budgets: progress });
   } catch (error) {
-    console.error('Get budget progress error:', error);
+    logger.error('Get budget progress error:', error);
     res.status(500).json({ error: 'Failed to fetch budget progress' });
   }
 });
@@ -65,7 +66,7 @@ router.post('/', async (req, res) => {
     await budget.save();
     res.status(201).json({ budget });
   } catch (error) {
-    console.error('Create budget error:', error);
+    logger.error('Create budget error:', error);
     res.status(500).json({ error: 'Failed to create budget' });
   }
 });
@@ -92,7 +93,7 @@ router.put('/:id', async (req, res) => {
     await budget.save();
     res.json({ budget });
   } catch (error) {
-    console.error('Update budget error:', error);
+    logger.error('Update budget error:', error);
     res.status(500).json({ error: 'Failed to update budget' });
   }
 });
@@ -112,7 +113,7 @@ router.delete('/:id', async (req, res) => {
     await budget.save();
     res.json({ message: 'Budget deleted successfully' });
   } catch (error) {
-    console.error('Delete budget error:', error);
+    logger.error('Delete budget error:', error);
     res.status(500).json({ error: 'Failed to delete budget' });
   }
 });

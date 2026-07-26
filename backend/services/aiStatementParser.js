@@ -1,5 +1,7 @@
+const logger = require("../utils/logger");
+
 const GEMINI_URL =
-  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.0-flash:generateContent";
+  "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
 
 class AIStatementParserService {
   static getApiKey() {
@@ -42,7 +44,7 @@ Example:
 `;
 
     try {
-      console.log("Sending statement to Gemini...");
+      logger.info("Sending statement to Gemini...");
 
       const res = await fetch(`${GEMINI_URL}?key=${this.getApiKey()}`, {
         method: "POST",
@@ -78,7 +80,7 @@ Example:
         receiptUrl: null,
       }));
     } catch (err) {
-      console.error("Gemini error:", err);
+      logger.error("Gemini error:", err);
       throw new Error("AI could not process the statement.");
     }
   }

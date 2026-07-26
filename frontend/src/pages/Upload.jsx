@@ -21,7 +21,6 @@ const Upload = () => {
       const formats = await uploadService.getSupportedFormats();
       setSupportedFormats(formats);
     } catch (error) {
-      console.error('Error loading supported formats:', error);
     }
   };
 
@@ -81,7 +80,6 @@ const Upload = () => {
         toast.error(result.error || 'Upload failed');
       }
     } catch (error) {
-      console.error('Upload error:', error);
       toast.error('Upload failed. Please try again.');
     } finally {
       setIsUploading(false);

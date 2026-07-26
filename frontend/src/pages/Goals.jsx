@@ -386,7 +386,6 @@ const Goals = () => {
       const res = await api.get('/goals');
       setGoals(Array.isArray(res.data.goals) ? res.data.goals : []);
     } catch (error) {
-      console.error('Error loading goals:', error);
       setGoals([]);
       toast.error('Failed to load goals');
     } finally {

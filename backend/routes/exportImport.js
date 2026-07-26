@@ -1,6 +1,7 @@
 const express = require('express');
 const { authenticateToken } = require('../middleware/auth');
 const { exportUserData, importUserData } = require('../services/exportImportService');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -17,7 +18,7 @@ router.get('/export', async (req, res) => {
     res.setHeader('Content-Disposition', `attachment; filename="${filename}"`);
     res.send(data);
   } catch (error) {
-    console.error('Export error:', error);
+    logger.error('Export error:', error);
     res.status(500).json({ error: 'Failed to export data', message: error.message });
   }
 });
@@ -50,7 +51,7 @@ router.post('/import', async (req, res) => {
       results 
     });
   } catch (error) {
-    console.error('Import error:', error);
+    logger.error('Import error:', error);
     res.status(500).json({ error: 'Failed to import data', message: error.message });
   }
 });

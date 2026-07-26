@@ -1,7 +1,5 @@
 const express = require('express');
 const Transaction = require('../models/transaction');
-const Budget = require('../models/budget');
-const Goal = require('../models/goal');
 const { authenticateToken } = require('../middleware/auth');
 const { asyncHandler } = require('../middleware/errorHandler');
 const aiService = require('../services/aiService');

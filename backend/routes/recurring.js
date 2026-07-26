@@ -2,6 +2,7 @@ const express = require('express');
 const router = express.Router();
 const RecurringTransaction = require('../models/recurringTransaction');
 const { authenticateToken } = require('../middleware/auth');
+const logger = require('../utils/logger');
 
 router.use(authenticateToken);
 
@@ -12,7 +13,7 @@ router.get('/', async (req, res) => {
     }).sort({ nextOccurrence: 1 });
     res.json({ recurring });
   } catch (error) {
-    console.error('Get recurring error:', error);
+    logger.error('Get recurring error:', error);
     res.status(500).json({ error: 'Failed to fetch recurring transactions' });
   }
 });
@@ -68,7 +69,7 @@ router.post('/', async (req, res) => {
     await recurring.save();
     res.status(201).json({ recurring });
   } catch (error) {
-    console.error('Create recurring error:', error);
+    logger.error('Create recurring error:', error);
     res.status(500).json({ error: 'Failed to create recurring transaction' });
   }
 });
@@ -105,7 +106,7 @@ router.put('/:id', async (req, res) => {
     await recurring.save();
     res.json({ recurring });
   } catch (error) {
-    console.error('Update recurring error:', error);
+    logger.error('Update recurring error:', error);
     res.status(500).json({ error: 'Failed to update recurring transaction' });
   }
 });
@@ -118,7 +119,7 @@ router.post('/process', async (req, res) => {
       transactions: processed 
     });
   } catch (error) {
-    console.error('Process recurring error:', error);
+    logger.error('Process recurring error:', error);
     res.status(500).json({ error: 'Failed to process recurring transactions' });
   }
 });
@@ -136,7 +137,7 @@ router.delete('/:id', async (req, res) => {
     
     res.json({ message: 'Recurring transaction deleted successfully' });
   } catch (error) {
-    console.error('Delete recurring error:', error);
+    logger.error('Delete recurring error:', error);
     res.status(500).json({ error: 'Failed to delete recurring transaction' });
   }
 });

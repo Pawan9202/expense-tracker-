@@ -31,7 +31,6 @@ const QuickAddModal = ({ isOpen, onClose }) => {
       const cats = await transactionService.getCategories();
       setCategories(cats || []);
     } catch (error) {
-      console.error('Error loading categories:', error);
       setCategoriesError(true);
     } finally {
       setLoadingCategories(false);
@@ -61,7 +60,6 @@ const QuickAddModal = ({ isOpen, onClose }) => {
       reset();
       onClose();
     } catch (error) {
-      console.error('Error saving transaction:', error);
       toast.error(error.response?.data?.message || 'Failed to save transaction');
     } finally {
       setSubmitting(false);

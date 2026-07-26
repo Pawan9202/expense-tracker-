@@ -274,7 +274,6 @@ const Budgets = () => {
       setBudgets(Array.isArray(budgetsData.budgets) ? budgetsData.budgets : []);
       setCategories(Array.isArray(categoriesData.categories) ? categoriesData.categories : []);
     } catch (error) {
-      console.error('Error loading data:', error);
       setBudgets([]);
       setCategories([]);
       toast.error('Failed to load budgets');

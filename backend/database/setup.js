@@ -5,6 +5,7 @@ require('dotenv').config();
 const User = require('../models/user');
 const Category = require('../models/category');
 const Transaction = require('../models/transaction');
+const logger = require('../utils/logger');
 
 const connectDB = async () => {
   try {
@@ -12,10 +13,10 @@ const connectDB = async () => {
       useNewUrlParser: true,
       useUnifiedTopology: true,
     });
-    console.log(`MongoDB Connected: ${conn.connection.host}`);
+    logger.info(`MongoDB Connected: ${conn.connection.host}`);
     return conn;
   } catch (error) {
-    console.error('MongoDB connection error:', error);
+    logger.error('MongoDB connection error:', error);
     process.exit(1);
   }
 };
@@ -24,21 +25,22 @@ const createDemoUser = async () => {
   try {
     const existingUser = await User.findOne({ username: 'demo' });
     if (existingUser) {
-      console.log('Demo user already exists');
+      logger.info('Demo user already exists');
       return existingUser._id;
     }
 
+    const demoPassword = process.env.DEMO_USER_PASSWORD || 'ChangeMe123!';
     const demoUser = new User({
       username: 'demo',
       email: 'demo@example.com',
-      password: 'Demo123'
+      password: demoPassword
     });
 
     await demoUser.save();
-    console.log('Demo user created with ID:', demoUser._id);
+    logger.info('Demo user created with ID:', demoUser._id);
     return demoUser._id;
   } catch (error) {
-    console.error('Error creating demo user:', error);
+    logger.error('Error creating demo user:', error);
     throw error;
   }
 };
@@ -46,9 +48,9 @@ const createDemoUser = async () => {
 const createDefaultCategories = async (userId) => {
   try {
     await Category.createDefaultCategories(userId);
-    console.log('Default categories created for user');
+    logger.info('Default categories created for user');
   } catch (error) {
-    console.error('Error creating default categories:', error);
+    logger.error('Error creating default categories:', error);
     throw error;
   }
 };
@@ -66,32 +68,32 @@ const insertSampleTransactions = async (userId) => {
     ];
 
     await Transaction.insertMany(transactions);
-    console.log('Sample transactions inserted');
+    logger.info('Sample transactions inserted');
   } catch (error) {
-    console.error('Error inserting sample transactions:', error);
+    logger.error('Error inserting sample transactions:', error);
     throw error;
   }
 };
 
 const setupDatabase = async () => {
   try {
-    console.log('Setting up database...');
-    
+    logger.info('Setting up database...');
+
     await connectDB();
-    
+
     const demoUserId = await createDemoUser();
     await createDefaultCategories(demoUserId);
     await insertSampleTransactions(demoUserId);
-    
-    console.log('Database setup completed successfully!');
-    console.log('Demo credentials: username: demo, password: Demo123');
-    
+
+    logger.info('Database setup completed successfully!');
+    logger.info('Demo user created. Set DEMO_USER_PASSWORD env var for custom password.');
+
     mongoose.connection.close();
   } catch (error) {
-    console.error('Database setup failed:', error);
+    logger.error('Database setup failed:', error);
     mongoose.connection.close();
     process.exit(1);
   }
 };
 
-setupDatabase(); 
+setupDatabase();

@@ -4,12 +4,14 @@ const express = require('express');
 const cors = require('cors');
 const http = require('http');
 const { Server } = require('socket.io');
+const jwt = require('jsonwebtoken');
 const path = require('path');
 
 const config = require('./config');
 const logger = require('./utils/logger');
 const connectDB = require('./models/database');
 const { errorHandler, notFoundHandler } = require('./middleware/errorHandler');
+const { authLimiter, apiLimiter, uploadLimiter } = require('./middleware/rateLimiter');
 
 const authRoutes = require('./routes/auth');
 const transactionRoutes = require('./routes/transactions');
@@ -28,7 +30,7 @@ const server = http.createServer(app);
 
 const io = new Server(server, {
   cors: {
-    origin: config.cors.origin,
+    origin: config.cors.origin.split(','),
     methods: ['GET', 'POST']
   }
 });
@@ -36,20 +38,19 @@ const io = new Server(server, {
 app.set('io', io);
 app.set('config', config);
 
-const allowedOrigins = process.env.CORS_ORIGIN 
-  ? process.env.CORS_ORIGIN.split(',') 
-  : ['http://localhost:5173', 'http://localhost:3000', 'http://localhost:3001'];
+const allowedOrigins = process.env.CORS_ORIGIN
+  ? process.env.CORS_ORIGIN.split(',')
+  : ['http://localhost:5173', 'http://localhost:3000'];
 
 app.use(cors({
   origin: function(origin, callback) {
-    // Allow requests with no origin (like mobile apps or curl)
     if (!origin) return callback(null, true);
-    
+
     if (allowedOrigins.includes(origin)) {
       callback(null, true);
     } else {
-      console.log('CORS blocked origin:', origin);
-      callback(null, true); // Allow all for now
+      logger.warn(`CORS blocked origin: ${origin}`);
+      callback(new Error('Not allowed by CORS'));
     }
   },
   credentials: true
@@ -59,11 +60,25 @@ app.use(express.urlencoded({ extended: true, limit: '10mb' }));
 
 app.use('/uploads', express.static(path.join(__dirname, 'uploads')));
 
+io.use((socket, next) => {
+  const token = socket.handshake.auth?.token;
+  if (!token) {
+    return next(new Error('Authentication required'));
+  }
+  try {
+    const decoded = jwt.verify(token, config.jwt.secret);
+    socket.userId = decoded.userId;
+    next();
+  } catch (err) {
+    next(new Error('Invalid token'));
+  }
+});
+
 io.on('connection', (socket) => {
   logger.info(`Client connected: ${socket.id}`);
 
   socket.on('join_user_room', (userId) => {
-    if (userId) {
+    if (userId && userId === socket.userId) {
       socket.join(userId);
       logger.info(`Client ${socket.id} joined room ${userId}`);
     }
@@ -80,25 +95,29 @@ app.use((req, res, next) => {
 });
 
 app.get('/api/health', (req, res) => {
+  const mongoose = require('mongoose');
+  const dbStatus = mongoose.connection.readyState === 1 ? 'connected' : 'disconnected';
+
   res.json({
-    status: 'OK',
-    message: 'Personal Finance Assistant API is running',
+    status: dbStatus === 'connected' ? 'OK' : 'DEGRADED',
+    message: 'Personal Finance Assistant API',
     timestamp: new Date().toISOString(),
-    environment: config.env
+    environment: config.env,
+    database: dbStatus
   });
 });
 
-app.use('/api/auth', authRoutes);
-app.use('/api/transactions', transactionRoutes);
-app.use('/api/analytics', analyticsRoutes);
-app.use('/api/upload', uploadRoutes);
-app.use('/api/budgets', budgetRoutes);
-app.use('/api/goals', goalRoutes);
-app.use('/api/recurring', recurringRoutes);
+app.use('/api/auth', authLimiter, authRoutes);
+app.use('/api/transactions', apiLimiter, transactionRoutes);
+app.use('/api/analytics', apiLimiter, analyticsRoutes);
+app.use('/api/upload', uploadLimiter, uploadRoutes);
+app.use('/api/budgets', apiLimiter, budgetRoutes);
+app.use('/api/goals', apiLimiter, goalRoutes);
+app.use('/api/recurring', apiLimiter, recurringRoutes);
 app.use('/api/whatsapp', whatsappRoutes);
-app.use('/api/insights', insightsRoutes);
-app.use('/api/notifications', notificationsRoutes);
-app.use('/api/export-import', exportImportRoutes);
+app.use('/api/insights', apiLimiter, insightsRoutes);
+app.use('/api/notifications', apiLimiter, notificationsRoutes);
+app.use('/api/export-import', apiLimiter, exportImportRoutes);
 
 app.use(notFoundHandler);
 app.use(errorHandler);
@@ -108,7 +127,6 @@ const startServer = async () => {
     await connectDB();
     logger.info('MongoDB connected');
 
-    // Try to connect Redis (optional - app works without it)
     try {
       const { connectRedis } = require('./services/cacheService');
       await connectRedis();
@@ -120,7 +138,6 @@ const startServer = async () => {
     server.listen(config.port, '0.0.0.0', () => {
       logger.info(`Server running on port ${config.port}`);
       logger.info(`Environment: ${config.env}`);
-      logger.info(`API available at http://localhost:${config.port}/api`);
     });
   } catch (error) {
     logger.error('Failed to start server:', error);
@@ -128,7 +145,6 @@ const startServer = async () => {
   }
 };
 
-// Only start server and add handlers if not in test environment
 if (process.env.NODE_ENV !== 'test') {
   process.on('unhandledRejection', (reason, promise) => {
     logger.error('Unhandled Rejection at:', promise, 'reason:', reason);

@@ -3,6 +3,7 @@ const User = require('../models/user');
 const Category = require('../models/category');
 const { authenticateToken, generateToken } = require('../middleware/auth');
 const { validateRegistration, validateLogin, validateProfileUpdate, validatePasswordChange } = require('../middleware/validation');
+const logger = require('../utils/logger');
 
 const router = express.Router();
 
@@ -18,7 +19,6 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
     }
 
-    // Check if email already exists
     const existingEmail = await User.findOne({ email });
     if (existingEmail) {
       return res.status(400).json({
@@ -27,14 +27,11 @@ router.post('/register', validateRegistration, async (req, res) => {
       });
     }
 
-    // Create new user
     const user = new User({ username, email, password });
     await user.save();
 
-    // Create default categories for the user
     await Category.createDefaultCategories(user._id);
 
-    // Generate JWT token
     const token = generateToken(user);
 
     res.status(201).json({
@@ -48,7 +45,7 @@ router.post('/register', validateRegistration, async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Registration error:', error);
+    logger.error('Registration error:', error);
     res.status(500).json({
       error: 'Registration failed',
       message: error.message || 'An error occurred during registration'
@@ -58,13 +55,10 @@ router.post('/register', validateRegistration, async (req, res) => {
 
 
 router.post('/login', validateLogin, async (req, res) => {
-  console.log('Login attempt:', req.body.username);
   try {
     const { username, password } = req.body;
 
-    // Find user by username
     const user = await User.findOne({ username });
-    console.log('User found:', !!user);
     if (!user) {
       return res.status(401).json({
         error: 'Invalid credentials',
@@ -72,9 +66,7 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
 
-    // Verify password
     const isValidPassword = await user.comparePassword(password);
-    console.log('Password valid:', isValidPassword);
     if (!isValidPassword) {
       return res.status(401).json({
         error: 'Invalid credentials',
@@ -82,7 +74,6 @@ router.post('/login', validateLogin, async (req, res) => {
       });
     }
 
-    // Generate JWT token
     const token = generateToken(user);
 
     res.json({
@@ -96,7 +87,7 @@ router.post('/login', validateLogin, async (req, res) => {
       token
     });
   } catch (error) {
-    console.error('Login error:', error);
+    logger.error('Login error:', error);
     res.status(500).json({
       error: 'Login failed',
       message: error.message || 'An error occurred during login'
@@ -120,7 +111,7 @@ router.get('/me', authenticateToken, async (req, res) => {
       }
     });
   } catch (error) {
-    console.error('Get profile error:', error);
+    logger.error('Get profile error:', error);
     res.status(500).json({
       error: 'Failed to get profile',
       message: 'An error occurred while retrieving your profile'
@@ -133,7 +124,6 @@ router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res
     const { username, email, whatsappNumber } = req.body;
     const updates = {};
 
-    // Check if username is being updated and if it already exists
     if (username && username !== req.user.username) {
       const existingUsername = await User.findOne({ username });
       if (existingUsername) {
@@ -145,7 +135,6 @@ router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res
       updates.username = username;
     }
 
-    // Check if email is being updated and if it already exists
     if (email && email !== req.user.email) {
       const existingEmail = await User.findOne({ email });
       if (existingEmail) {
@@ -157,12 +146,10 @@ router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res
       updates.email = email;
     }
 
-    // Update whatsappNumber if provided
     if (whatsappNumber !== undefined) {
       if (whatsappNumber === '') {
-        updates.whatsappNumber = null; // Unlink
+        updates.whatsappNumber = null;
       } else {
-        // Basic check to see if another user has this number
         const existingNumber = await User.findOne({ whatsappNumber, _id: { $ne: req.user.id } });
         if (existingNumber) {
           return res.status(400).json({
@@ -174,7 +161,6 @@ router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res
       }
     }
 
-    // Update user profile
     const updatedUser = await User.findByIdAndUpdate(
       req.user.id,
       updates,
@@ -200,7 +186,7 @@ router.put('/profile', authenticateToken, validateProfileUpdate, async (req, res
       }
     });
   } catch (error) {
-    console.error('Profile update error:', error);
+    logger.error('Profile update error:', error);
     res.status(500).json({
       error: 'Profile update failed',
       message: 'An error occurred while updating your profile'
@@ -213,9 +199,8 @@ router.put('/password', authenticateToken, validatePasswordChange, async (req, r
   try {
     const { currentPassword, newPassword } = req.body;
 
-    // Get user with password for verification
     const user = await User.findById(req.user.id);
-    
+
     if (!user) {
       return res.status(404).json({
         error: 'User not found',
@@ -223,7 +208,6 @@ router.put('/password', authenticateToken, validatePasswordChange, async (req, r
       });
     }
 
-    // Verify current password
     const isValidPassword = await user.comparePassword(currentPassword);
     if (!isValidPassword) {
       return res.status(400).json({
@@ -232,7 +216,6 @@ router.put('/password', authenticateToken, validatePasswordChange, async (req, r
       });
     }
 
-    // Update password
     user.password = newPassword;
     await user.save();
 
@@ -240,7 +223,7 @@ router.put('/password', authenticateToken, validatePasswordChange, async (req, r
       message: 'Password changed successfully'
     });
   } catch (error) {
-    console.error('Password change error:', error);
+    logger.error('Password change error:', error);
     res.status(500).json({
       error: 'Password change failed',
       message: 'An error occurred while changing your password'
@@ -252,7 +235,7 @@ router.put('/password', authenticateToken, validatePasswordChange, async (req, r
 router.delete('/account', authenticateToken, async (req, res) => {
   try {
     const deletedUser = await User.findByIdAndDelete(req.user.id);
-    
+
     if (!deletedUser) {
       return res.status(404).json({
         error: 'User not found',
@@ -264,7 +247,7 @@ router.delete('/account', authenticateToken, async (req, res) => {
       message: 'Account deleted successfully'
     });
   } catch (error) {
-    console.error('Account deletion error:', error);
+    logger.error('Account deletion error:', error);
     res.status(500).json({
       error: 'Account deletion failed',
       message: 'An error occurred while deleting your account'
@@ -272,4 +255,4 @@ router.delete('/account', authenticateToken, async (req, res) => {
   }
 });
 
-module.exports = router; 
+module.exports = router;

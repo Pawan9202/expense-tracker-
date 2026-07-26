@@ -1,6 +1,5 @@
 import api from './api';
 
-// This is a helper function to handle the API call logic and standardize the response.
 const handleUpload = async (endpoint, file, type) => {
   const formData = new FormData();
   formData.append('file', file);
@@ -23,12 +22,10 @@ const handleUpload = async (endpoint, file, type) => {
 };
 
 export const uploadService = {
-  // `uploadReceipt` now uses the robust helper function.
   async uploadReceipt(file) {
     return handleUpload('/upload/receipt', file, 'receipt');
   },
 
-  // `uploadStatement` also uses the helper function.
   async uploadStatement(file) {
     return handleUpload('/upload/statement', file, 'statement');
   },
@@ -38,33 +35,9 @@ export const uploadService = {
       const response = await api.get('/upload/supported-formats');
       return response.data;
     } catch (error) {
-      console.error("Failed to fetch supported formats:", error);
-      // Return a default object so the UI doesn't crash if this call fails.
       return {
         receipt: { formats: ['JPG', 'PNG', 'TIFF'] },
         statement: { formats: ['PDF'] }
-      };
-    }
-  },
-
-  async getFiles() {
-    try {
-      const response = await api.get('/upload/files');
-      return response.data.files;
-    } catch (error) {
-      console.error("Failed to fetch files:", error);
-      return []; // Return an empty array on error.
-    }
-  },
-
-  async deleteFile(filename) {
-    try {
-      const response = await api.delete(`/upload/${filename}`);
-      return { ...response.data, success: true };
-    } catch (error) {
-      return {
-        success: false,
-        error: error.response?.data?.message || 'Failed to delete file.'
       };
     }
   }

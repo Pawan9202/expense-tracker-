@@ -1,5 +1,6 @@
 const Budget = require('../models/budget');
 const Notification = require('../models/notification');
+const logger = require('../utils/logger');
 
 const checkBudgetAlerts = async (userId, io) => {
   try {
@@ -20,7 +21,7 @@ const checkBudgetAlerts = async (userId, io) => {
       }
     }
   } catch (error) {
-    console.error('Budget alert check failed:', error);
+    logger.error('Budget alert check failed:', error);
   }
 };
 
@@ -60,7 +61,7 @@ const checkBudgetOnTransaction = async (userId, category, newAmount, io) => {
       }
     }
   } catch (error) {
-    console.error('Budget check on transaction failed:', error);
+    logger.error('Budget check on transaction failed:', error);
   }
 };
 

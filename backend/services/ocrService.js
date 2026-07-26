@@ -1,13 +1,14 @@
 const Tesseract = require('tesseract.js');
 const fs = require('fs');
 const path = require('path');
+const logger = require('../utils/logger');
 
 
 class OCRService {
  
   static async extractText(imagePath) {
     try {
-      console.log(`Starting OCR extraction for: ${imagePath}`);
+      logger.info(`Starting OCR extraction for: ${imagePath}`);
       
       const result = await Tesseract.recognize(
         imagePath,
@@ -15,16 +16,16 @@ class OCRService {
         {
           logger: m => {
             if (m.status === 'recognizing text') {
-              console.log(`OCR Progress: ${Math.round(m.progress * 100)}%`);
+              logger.info(`OCR Progress: ${Math.round(m.progress * 100)}%`);
             }
           }
         }
       );
 
-      console.log('OCR extraction completed successfully');
+      logger.info('OCR extraction completed successfully');
       return result.data.text;
     } catch (error) {
-      console.error('OCR extraction failed:', error);
+      logger.error('OCR extraction failed:', error);
       throw new Error(`Failed to extract text from image: ${error.message}`);
     }
   }
@@ -36,7 +37,7 @@ class OCRService {
    */
   static async parseReceipt(text) {
     try {
-      console.log('Parsing receipt text...');
+      logger.info('Parsing receipt text...');
       
       const lines = text.split('\n').map(line => line.trim()).filter(line => line.length > 0);
       
@@ -124,10 +125,10 @@ class OCRService {
       // Categorize based on keywords
       result.category = this.categorizeReceipt(text, result.description);
 
-      console.log('Receipt parsing completed:', result);
+      logger.info('Receipt parsing completed:', result);
       return result;
     } catch (error) {
-      console.error('Receipt parsing failed:', error);
+      logger.error('Receipt parsing failed:', error);
       throw new Error(`Failed to parse receipt: ${error.message}`);
     }
   }
@@ -223,7 +224,7 @@ class OCRService {
         rawText: text
       };
     } catch (error) {
-      console.error('Receipt processing failed:', error);
+      logger.error('Receipt processing failed:', error);
       return {
         success: false,
         error: error.message,

@@ -1,9 +1,9 @@
-const config = require('../config');
+const logger = require('../utils/logger');
 
 class AIService {
   constructor() {
     this.geminiKey = process.env.GEMINI_API_KEY || process.env.GOOGLE_GEMINI_API_KEY;
-    this.model = 'gemini-2.0-flash';
+    this.model = 'gemini-2.5-flash';
   }
 
   async generateSpendingInsights(transactions, month, year) {
@@ -52,14 +52,14 @@ Format as a JSON array of objects with "title" and "description" fields only.`;
 
       const data = await response.json();
       const text = data.candidates?.[0]?.content?.parts?.[0]?.text || '';
-      
+
       const jsonMatch = text.match(/\[[\s\S]*\]/);
       if (jsonMatch) {
         return JSON.parse(jsonMatch[0]);
       }
       return this.getDefaultInsights(transactions, month);
     } catch (error) {
-      console.error('AI insights generation failed:', error.message);
+      logger.error('AI insights generation failed:', error.message);
       return this.getDefaultInsights(transactions, month);
     }
   }
@@ -67,7 +67,7 @@ Format as a JSON array of objects with "title" and "description" fields only.`;
   getDefaultInsights(transactions, month) {
     const expenses = transactions.filter(t => t.type === 'expense');
     const totalExpenses = expenses.reduce((sum, t) => sum + t.amount, 0);
-    
+
     const categoryTotals = {};
     expenses.forEach(t => {
       categoryTotals[t.category] = (categoryTotals[t.category] || 0) + t.amount;
@@ -121,9 +121,9 @@ Format as a JSON array of objects with "title" and "description" fields only.`;
         method: 'POST',
         headers: { 'Content-Type': 'application/json' },
         body: JSON.stringify({
-          contents: [{ 
-            parts: [{ 
-              text: `Categorize this transaction into ONE of these categories exactly: Food & Dining, Transportation, Shopping, Entertainment, Bills & Utilities, Healthcare, Travel, Income, Other. Just return the category name, nothing else.\nTransaction: "${description}" - $${amount}` 
+          contents: [{
+            parts: [{
+              text: `Categorize this transaction into ONE of these categories exactly: Food & Dining, Transportation, Shopping, Entertainment, Bills & Utilities, Healthcare, Travel, Income, Other. Just return the category name, nothing else.\nTransaction: "${description}" - $${amount}`
             }]
           }],
           generationConfig: { temperature: 0.3, maxOutputTokens: 20 }
@@ -132,14 +132,14 @@ Format as a JSON array of objects with "title" and "description" fields only.`;
 
       const data = await response.json();
       const category = data.candidates?.[0]?.content?.parts?.[0]?.text?.trim() || '';
-      
+
       const validCategories = ['Food & Dining', 'Transportation', 'Shopping', 'Entertainment', 'Bills & Utilities', 'Healthcare', 'Travel', 'Income', 'Other'];
       if (validCategories.includes(category)) {
         return category;
       }
       return this.getDefaultCategory(description);
     } catch (error) {
-      console.error('Auto-categorization failed:', error.message);
+      logger.error('Auto-categorization failed:', error.message);
       return this.getDefaultCategory(description);
     }
   }
@@ -166,7 +166,7 @@ Format as a JSON array of objects with "title" and "description" fields only.`;
 
   async predictFutureSpending(transactions, monthsAhead = 3) {
     const monthlyTotals = {};
-    
+
     transactions
       .filter(t => t.type === 'expense')
       .forEach(t => {

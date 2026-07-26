@@ -1,5 +1,6 @@
 const fs = require("fs");
 const path = require("path");
+const logger = require("../utils/logger");
 
 const GEMINI_URL =
   "https://generativelanguage.googleapis.com/v1beta/models/gemini-2.5-flash:generateContent";
@@ -58,7 +59,7 @@ Return ONLY this JSON format, nothing else:
 If a field cannot be found, use null for that field. But ALWAYS try to find the totalAmount - it is the most important field.`;
 
     try {
-      console.log("Sending receipt image to Gemini...");
+      logger.info("Sending receipt image to Gemini...");
 
       const base64 = this.fileToBase64(imagePath);
       const mimeType = this.getMimeType(imagePath);
@@ -89,7 +90,7 @@ If a field cannot be found, use null for that field. But ALWAYS try to find the 
 
       if (!res.ok) {
         const errorData = await res.json().catch(() => ({}));
-        console.error("Gemini API error:", res.status, JSON.stringify(errorData));
+        logger.error("Gemini API error:", res.status, JSON.stringify(errorData));
         throw new Error(`Gemini API returned ${res.status}: ${errorData.error?.message || 'Unknown error'}`);
       }
 
@@ -99,7 +100,7 @@ If a field cannot be found, use null for that field. But ALWAYS try to find the 
         data?.candidates?.[0]?.content?.parts?.[0]?.text;
 
       if (!textResponse) {
-        console.error("Raw Gemini response:", JSON.stringify(data));
+        logger.error("Raw Gemini response:", JSON.stringify(data));
         throw new Error("Invalid response from Gemini - no text found");
       }
 
@@ -132,7 +133,7 @@ If a field cannot be found, use null for that field. But ALWAYS try to find the 
         rawResponse: parsed,
       };
     } catch (error) {
-      console.error("Error parsing receipt with AI:", error);
+      logger.error("Error parsing receipt with AI:", error);
       throw new Error(`The AI model could not process the receipt image: ${error.message}`);
     }
   }

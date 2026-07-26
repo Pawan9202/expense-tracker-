@@ -1,6 +1,7 @@
 const pdfParse = require("pdf-parse");
 const fs = require("fs");
 const path = require("path");
+const logger = require("../utils/logger");
 
 function render_page(pageData) {
   let render_options = {
@@ -33,7 +34,7 @@ class PDFService {
       const data = await pdfParse(dataBuffer, { pageRender: render_page });
       return data.text;
     } catch (error) {
-      console.error("PDF text extraction failed:", error);
+      logger.error("PDF text extraction failed:", error);
       throw new Error(`Failed to extract text from PDF: ${error.message}`);
     }
   }
@@ -50,7 +51,7 @@ class PDFService {
     );
 
     if (startIndex === -1) {
-      console.error("Could not find the start of transaction data.");
+      logger.error("Could not find the start of transaction data.");
       return [];
     }
 
@@ -134,7 +135,7 @@ class PDFService {
       );
     }
 
-    console.log(
+    logger.info(
       `State-machine parser successfully extracted ${transactions.length} transactions.`
     );
 
@@ -229,7 +230,7 @@ class PDFService {
         rawText: text.substring(0, 1500) + "...",
       };
     } catch (error) {
-      console.error("PDF statement processing failed:", error);
+      logger.error("PDF statement processing failed:", error);
       return {
         success: false,
         error: error.message,

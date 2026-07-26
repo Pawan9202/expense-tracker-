@@ -1,6 +1,7 @@
 const jwt = require('jsonwebtoken');
 const config = require('../config');
 const User = require('../models/user');
+const logger = require('../utils/logger');
 
 const authenticateToken = async (req, res, next) => {
   try {
@@ -42,7 +43,7 @@ const authenticateToken = async (req, res, next) => {
       });
     }
 
-    console.error('Authentication error:', error);
+    logger.error('Authentication error:', error);
     return res.status(500).json({
       error: 'Authentication failed',
       message: 'An error occurred during authentication'
@@ -113,7 +114,7 @@ const requireOwnership = (Model, resourceIdParam = 'id') => {
       }
 
       if (!resource.userId && !resource.user) {
-        console.error('Ownership check error: Resource model does not have a userId field.');
+        logger.error('Ownership check error: Resource model does not have a userId field.');
         return res.status(500).json({ error: 'Permission check misconfigured' });
       }
 
@@ -128,7 +129,7 @@ const requireOwnership = (Model, resourceIdParam = 'id') => {
       req.resource = resource;
       next();
     } catch (error) {
-      console.error('Ownership check error:', error);
+      logger.error('Ownership check error:', error);
       return res.status(500).json({
         error: 'Permission check failed',
         message: 'An error occurred while checking permissions'

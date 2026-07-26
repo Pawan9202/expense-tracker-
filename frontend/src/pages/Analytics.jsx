@@ -55,7 +55,6 @@ const Analytics = () => {
       setTimelineData(Object.values(processedTimeline));
 
     } catch (error) {
-      console.error('Error loading analytics:', error);
       toast.error('Failed to load analytics data');
     } finally {
       setLoading(false);

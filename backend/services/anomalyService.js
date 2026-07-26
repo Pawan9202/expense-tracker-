@@ -1,4 +1,5 @@
 const Transaction = require('../models/transaction');
+const logger = require('../utils/logger');
 
 const detectAnomalies = async (userId, newTransaction = null) => {
   const anomalies = [];
@@ -82,7 +83,7 @@ const detectAnomalies = async (userId, newTransaction = null) => {
     }
 
   } catch (error) {
-    console.error('Anomaly detection error:', error);
+    logger.error('Anomaly detection error:', error);
   }
 
   return anomalies;
