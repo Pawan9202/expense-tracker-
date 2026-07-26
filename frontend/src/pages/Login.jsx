@@ -163,7 +163,7 @@ const Login = () => {
 
           <div className="text-center mt-6">
             <div className="inline-block px-4 py-2 rounded-lg bg-white/5 border border-white/10 text-xs text-gray-400">
-              <span className="font-semibold text-gray-300">Demo:</span> demo / Demo123
+              <span className="font-semibold text-gray-300">Demo:</span> demo / ChangeMe123!
             </div>
           </div>
         </motion.form>
