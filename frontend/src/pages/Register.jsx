@@ -1,7 +1,7 @@
 import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../hooks/useAuth.js';
 import { Eye, EyeOff, UserPlus, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';

@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { Link } from 'react-router-dom';
 import { motion } from 'framer-motion';
 import {
@@ -38,7 +38,7 @@ const Dashboard = () => {
     const handleRefresh = () => loadDashboardData();
     window.addEventListener('transaction_updated', handleRefresh);
     return () => window.removeEventListener('transaction_updated', handleRefresh);
-  }, []);
+  }, [loadDashboardData]);
 
   const loadDashboardData = useCallback(async () => {
     try {
@@ -50,8 +50,6 @@ const Dashboard = () => {
 
       const startDate = startOfMonth.toISOString().split('T')[0];
       const endDate = endOfMonth.toISOString().split('T')[0];
-
-      const headers = { Authorization: `Bearer ${localStorage.getItem('token')}` };
 
       const [summaryData, transactionsData, insightsData, budgetsData, goalsData] = await Promise.all([
         transactionService.getSummary(startDate, endDate),
@@ -120,7 +118,7 @@ const Dashboard = () => {
       <div className="flex flex-col md:flex-row justify-between items-start md:items-center gap-4">
         <motion.div variants={itemVariants}>
           <h1 className="text-3xl font-bold text-white tracking-tight">Financial Overview</h1>
-          <p className="text-gray-400 mt-1">Here's your latest financial breakdown for this month.</p>
+          <p className="text-gray-400 mt-1">Here&apos;s your latest financial breakdown for this month.</p>
         </motion.div>
         
         <motion.div variants={itemVariants} className="flex space-x-3 w-full md:w-auto">

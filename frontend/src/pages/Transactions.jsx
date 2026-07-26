@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { transactionService } from '../services/transactionService';
 import toast from 'react-hot-toast';
 import { Plus, Filter, X, Edit, Trash2, ArrowUpRight, ArrowDownRight, DollarSign, Calendar, Tag, FileText } from 'lucide-react';
@@ -39,7 +39,7 @@ const Transactions = ({ isNew = false }) => {
   });
 
   // Filter state
-  const [filters, setFilters] = useState({});
+  const [filters] = useState({});
 
   // Fetch both transactions and categories
   const loadData = useCallback(async (page = 1) => {

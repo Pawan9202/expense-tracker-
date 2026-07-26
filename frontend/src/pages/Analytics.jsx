@@ -1,4 +1,4 @@
-import React, { useState, useEffect, useCallback } from 'react';
+import { useState, useEffect, useCallback } from 'react';
 import { analyticsService } from '../services/analyticsService.js';
 import toast from 'react-hot-toast';
 import { BarChart, Bar, XAxis, YAxis, CartesianGrid, Tooltip, Legend, ResponsiveContainer, PieChart, Pie, Cell } from 'recharts';
@@ -298,7 +298,7 @@ const Analytics = () => {
                     axisLine={false} 
                     tickLine={false} 
                     tick={{ fill: '#9ca3af', fontSize: 12 }} 
-                    tickFormatter={(value) => `₹${value / 1000}k`} 
+                    tickFormatter={(value) => `$${value / 1000}k`} 
                     dx={-10}
                   />
                   <Tooltip content={<BarChartTooltip />} cursor={{ fill: 'rgba(255,255,255,0.02)' }} />

@@ -1,4 +1,4 @@
-import React, { useState, useEffect } from 'react';
+import { useState, useEffect } from 'react';
 import { Upload as UploadIcon, FileText, Image, AlertCircle, CheckCircle, FileUp } from 'lucide-react';
 import { uploadService } from '../services/uploadService.js';
 import toast from 'react-hot-toast';
@@ -20,7 +20,8 @@ const Upload = () => {
     try {
       const formats = await uploadService.getSupportedFormats();
       setSupportedFormats(formats);
-    } catch (error) {
+    } catch {
+      // Ignore - supported formats are optional
     }
   };
 

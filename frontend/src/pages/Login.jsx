@@ -1,7 +1,7 @@
-import React, { useState } from 'react';
+import { useState } from 'react';
 import { Link, useNavigate } from 'react-router-dom';
 import { useForm } from 'react-hook-form';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../hooks/useAuth.js';
 import { Eye, EyeOff, Wallet } from 'lucide-react';
 import toast from 'react-hot-toast';
 import { motion } from 'framer-motion';
@@ -71,7 +71,7 @@ const Login = () => {
             Welcome back
           </h2>
           <p className="mt-2 text-sm text-gray-400">
-            Don't have an account?{' '}
+            Don&apos;t have an account?{' '}
             <Link
               to="/register"
               className="font-medium text-indigo-400 hover:text-indigo-300 transition-colors"

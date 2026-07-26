@@ -1,23 +1,14 @@
-import { createContext, useContext, useState, useEffect, useCallback } from 'react';
+import { createContext, useState, useEffect, useCallback } from 'react';
 import { authService } from '../services/authService.js';
 import api from '../services/api.js';
 
-const AuthContext = createContext();
-
-export const useAuth = () => {
-  const context = useContext(AuthContext);
-  if (!context) {
-    throw new Error('useAuth must be used within an AuthProvider');
-  }
-  return context;
-};
-
-const CACHED_USER_KEY = 'cached_user';
+// eslint-disable-next-line react-refresh/only-export-components
+export const AuthContext = createContext();
 
 export const AuthProvider = ({ children }) => {
   const [user, setUser] = useState(() => {
     try {
-      const cached = localStorage.getItem(CACHED_USER_KEY);
+      const cached = localStorage.getItem('cached_user');
       return cached ? JSON.parse(cached) : null;
     } catch {
       return null;
@@ -36,10 +27,10 @@ export const AuthProvider = ({ children }) => {
     try {
       const userData = await authService.getProfile();
       setUser(userData);
-      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(userData));
+      localStorage.setItem('cached_user', JSON.stringify(userData));
     } catch (error) {
       localStorage.removeItem('token');
-      localStorage.removeItem(CACHED_USER_KEY);
+      localStorage.removeItem('cached_user');
       setUser(null);
     } finally {
       setLoading(false);
@@ -63,7 +54,7 @@ export const AuthProvider = ({ children }) => {
       const data = await authService.login(username, password);
       setUser(data.user);
       localStorage.setItem('token', data.token);
-      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(data.user));
+      localStorage.setItem('cached_user', JSON.stringify(data.user));
       return { success: true, user: data.user };
     } catch (error) {
       const details = error.response?.data?.details;
@@ -78,7 +69,7 @@ export const AuthProvider = ({ children }) => {
       const data = await authService.register(username, email, password);
       setUser(data.user);
       localStorage.setItem('token', data.token);
-      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(data.user));
+      localStorage.setItem('cached_user', JSON.stringify(data.user));
       return { success: true, user: data.user };
     } catch (error) {
       const details = error.response?.data?.details;
@@ -91,7 +82,7 @@ export const AuthProvider = ({ children }) => {
   const logout = () => {
     setUser(null);
     localStorage.removeItem('token');
-    localStorage.removeItem(CACHED_USER_KEY);
+    localStorage.removeItem('cached_user');
     delete api.defaults.headers.common['Authorization'];
   };
 
@@ -99,14 +90,14 @@ export const AuthProvider = ({ children }) => {
     try {
       const updatedUser = await authService.updateProfile(updates);
       setUser(updatedUser);
-      localStorage.setItem(CACHED_USER_KEY, JSON.stringify(updatedUser));
+      localStorage.setItem('cached_user', JSON.stringify(updatedUser));
       return { success: true, user: updatedUser };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Profile update failed';
       return { success: false, error: errorMessage };
     }
   };
-  
+
   const changePassword = async (currentPassword, newPassword) => {
     try {
       const data = await authService.changePassword(currentPassword, newPassword);
@@ -120,7 +111,7 @@ export const AuthProvider = ({ children }) => {
   const deleteAccount = async () => {
     try {
       const data = await authService.deleteAccount();
-      logout(); // Call logout to clear state and token
+      logout();
       return { success: true, message: data.message };
     } catch (error) {
       const errorMessage = error.response?.data?.message || 'Account deletion failed';

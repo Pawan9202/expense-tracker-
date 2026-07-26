@@ -1,7 +1,7 @@
 import { Routes, Route, Navigate } from 'react-router-dom';
 import { Toaster, toast } from 'react-hot-toast';
 import { io } from 'socket.io-client';
-import { useAuth } from './context/AuthContext.jsx';
+import { useAuth } from './hooks/useAuth.js';
 import { lazy, Suspense } from 'react';
 import Navbar from './components/Navbar.jsx';
 import QuickAddModal from './components/QuickAddModal.jsx';

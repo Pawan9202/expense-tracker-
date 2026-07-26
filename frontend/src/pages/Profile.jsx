@@ -1,5 +1,5 @@
 import { useState } from 'react';
-import { useAuth } from '../context/AuthContext.jsx';
+import { useAuth } from '../hooks/useAuth.js';
 import { User, Mail, Calendar, Save, Key, AlertTriangle, MessageCircle } from 'lucide-react';
 import { motion } from 'framer-motion';
 
